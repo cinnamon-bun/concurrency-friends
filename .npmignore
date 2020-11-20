@@ -3,4 +3,5 @@
 coverage/
 src/
 build/test/
+build/example/
 tsconfig.json

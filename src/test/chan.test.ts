@@ -201,10 +201,10 @@ for (let BUFFER of [0, 1, 2, 3, 4, 1000, undefined]) {
 
 test(`closing channel with no activity happening`, async () => {
     let chan = new Chan<number>(1);
-    expect(chan.closed).toBe(false);
+    expect(chan.isClosed).toBe(false);
 
     chan.close();
-    expect(chan.closed).toBe(true);
+    expect(chan.isClosed).toBe(true);
     expect(chan.canPutWithoutBlocking).toBe(false);
     expect(chan.canGetWithoutBlocking).toBe(false);
 
@@ -220,14 +220,14 @@ test(`closing channel with pending writes and a full buffer`, async () => {
     let chan = new Chan<number>(1);
     await chan.put(1);
     let p = chan.put(999, 30);  // start this now
-    expect(chan.closed).toBe(false);
+    expect(chan.isClosed).toBe(false);
     expect(chan.length).toBe(1);
-    expect(chan.waitingPuts.length).toBe(1);
+    expect(chan._waitingPuts.length).toBe(1);
 
     chan.close();
-    expect(chan.closed).toBe(true);
+    expect(chan.isClosed).toBe(true);
     expect(chan.length).toBe(0);  // buffer was cleared
-    expect(chan.waitingPuts.length).toBe(0);  // waiting puts were cleared
+    expect(chan._waitingPuts.length).toBe(0);  // waiting puts were cleared
     expect(chan.canPutWithoutBlocking).toBe(false);
     expect(chan.canGetWithoutBlocking).toBe(false);
 
@@ -240,14 +240,14 @@ test(`closing channel with pending writes and a full buffer`, async () => {
 test(`closing channel with pending reads`, async () => {
     let chan = new Chan<number>(1);
     let p = chan.get(30);  // start this now
-    expect(chan.closed).toBe(false);
+    expect(chan.isClosed).toBe(false);
     expect(chan.length).toBe(0);
-    expect(chan.waitingGets.length).toBe(1);
+    expect(chan._waitingGets.length).toBe(1);
 
     chan.close();
-    expect(chan.closed).toBe(true);
+    expect(chan.isClosed).toBe(true);
     expect(chan.length).toBe(0);
-    expect(chan.waitingGets.length).toBe(0);  // waiting gets were cleared
+    expect(chan._waitingGets.length).toBe(0);  // waiting gets were cleared
     expect(chan.canPutWithoutBlocking).toBe(false);
     expect(chan.canGetWithoutBlocking).toBe(false);
 
