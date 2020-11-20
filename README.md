@@ -37,7 +37,7 @@ Each `Conveyor` has one handler function.
 
 Put items in.  The handler function eats them in order, **one at a time**.
 
-`await push(item)` will continue when the handler function is done running on that specific item.
+`await push(item)` will continue when the handler function is done running on that specific item, and returns the output of the handler function.
 
 Use a Conveyor when you want to process items one at a time, and you want to know when a specific item has finished processing.
 
@@ -180,6 +180,30 @@ let square = new Conveyor<number, number>(async (n: number): number => {
 let nine = await square.push(3);
 let twentyfive = await square.push(5);
 let onehundred = await square.push(10);
+```
+
+Exceptions thrown by the handler function will come back as a rejected promise:
+
+```ts
+// Example: Errors thrown by the handler
+// The type signature is Conveyor<InputType, ReturnType>.
+
+let squareRootHandler = (n: number): number => {
+    if (n < 0) { throw new Error("n is negative") }
+    return Math.sqrt(n);
+};
+let conveyor = new Conveyor<number, number>(squareRootHandler);
+
+// Push data to the handler function and get the return value back.
+let three = await conveyor.push(9);
+
+// The handler function throws an error in this case
+// and we get it back:
+try {
+    let oops = await conveyor.push(-1);
+} catch (err) {
+    // Error("n is negative")
+}
 ```
 
 If you provide a `sortKeyFn` function this becomes a priority queue.

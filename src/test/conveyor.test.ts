@@ -4,7 +4,7 @@ import { Conveyor } from '../conveyor';
 import { sleep } from '../util';
 
 test('return value', async () => {
-    let double = async(x : number) : Promise<number> => {
+    let double = async (x : number) : Promise<number> => {
         await sleep(Math.random() * 30);
         return x * 2;
     }
@@ -90,7 +90,7 @@ test('priority queue', async () => {
         accum.push(x);
         await sleep(10);
     }, sortKeyFn);
-    expect(conv.sortKeyFn).not.toBeNull();
+    expect(conv._sortKeyFn).not.toBeNull();
 
     let input = [1, 7, 6, 9, 4, 2, 2, 3];
     let promises = [];
@@ -107,66 +107,53 @@ test('priority queue', async () => {
     expect(accum).toEqual(input);
 });
 
+test('error handling with sync handler', async () => {
+    let doubleSync = (x : number) : number => {
+        if (x === 4) { throw new Error('x is four'); }
+        return x * 2;
+    }
+    let syncConveyor = new Conveyor<number, number>(doubleSync);
+    // preload with some things that won't cause errors
+    for (let ii = 100; ii < 110; ii++) {
+        syncConveyor.push(ii)
+    }
+    for (let ii = 0; ii < 10; ii++) {
+        if (ii === 4) {
+            try {
+                await syncConveyor.push(ii);
+                expect(true).toBe(false);
+            } catch (e) {
+                expect(''+e).toMatch('Error: x is four');
+            }
+        } else {
+            let doubled = await syncConveyor.push(ii);
+            expect(doubled).toEqual(ii * 2);
+        }
+    }
+});
 
-/*
-let test = async () => {
-    let syncConveyor = new Conveyor<number>((x : number | undefined) : void => {
-        console.log('instant', x || 'idle');
-    });
-    let instantConveyor = new Conveyor<number>(async (x : number | undefined) : Promise<void> => {
-        console.log('instant', x || 'idle');
-    });
-    let delayConveyor = new Conveyor<number>(async (x : number | undefined) : Promise<void> => {
-        console.log('delay starting...', x || 'idle');
-        await delay(500);
-        console.log('...delay', x || 'idle');
-    });
-
-    console.log('-------------------------------------------------- DELAY');
-    console.log('============= PUSHING 1 2 3');
-    delayConveyor.push(1);
-    delayConveyor.push(2);
-    delayConveyor.push(3);
-    console.log('=============/');
-    setTimeout(() => {
-        console.log('============= PUSHING 4 5 6');
-        delayConveyor.push(4);
-        delayConveyor.push(5);
-        delayConveyor.push(6);
-        console.log('=============/');
-    }, 750);
-    await delay(4000);
-
-    console.log('-------------------------------------------------- INSTANT');
-    console.log('============= PUSHING 1 2 3');
-    instantConveyor.push(1);
-    instantConveyor.push(2);
-    instantConveyor.push(3);
-    console.log('=============/');
-    await delay(500);
-    console.log('============= PUSHING 4 5 6');
-    instantConveyor.push(4);
-    instantConveyor.push(5);
-    instantConveyor.push(6);
-    console.log('=============/');
-
-    await delay(500);
-
-    console.log('-------------------------------------------------- SYNC');
-    console.log('============= PUSHING 1 2 3');
-    syncConveyor.push(1);
-    syncConveyor.push(2);
-    syncConveyor.push(3);
-    console.log('=============/');
-    await delay(500);
-    console.log('============= PUSHING 4 5 6');
-    syncConveyor.push(4);
-    syncConveyor.push(5);
-    syncConveyor.push(6);
-    console.log('=============/');
-
-    console.log('--------------------------------------------------/');
-};
-
-test();
-*/
+test('error handling with async handler', async () => {
+    let doubleAsync = async (x : number) : Promise<number> => {
+        await sleep(Math.random() * 30);
+        if (x === 4) { throw new Error('x is four'); }
+        return x * 2;
+    }
+    let syncConveyor = new Conveyor<number, number>(doubleAsync);
+    // preload with some things that won't cause errors
+    for (let ii = 100; ii < 110; ii++) {
+        syncConveyor.push(ii)
+    }
+    for (let ii = 0; ii < 10; ii++) {
+        if (ii === 4) {
+            try {
+                await syncConveyor.push(ii);
+                expect(true).toBe(false);
+            } catch (e) {
+                expect(''+e).toMatch('Error: x is four');
+            }
+        } else {
+            let doubled = await syncConveyor.push(ii);
+            expect(doubled).toEqual(ii * 2);
+        }
+    }
+});

@@ -15,6 +15,7 @@
     "clean": "rm -rf build coverage .nyc_output",
     "build": "tsc",
     "test": "jest src/test/*.ts --verbose",
+    "test-conveyor": "jest src/test/conveyor.test.ts --verbose",
     "test-coverage": "jest src/test/*.ts --verbose --coverage",
     "prepublishOnly": "npm run clean && npm run build"
   },
