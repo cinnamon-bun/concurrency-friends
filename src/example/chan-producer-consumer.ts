@@ -10,7 +10,7 @@ let producer = async (chan: Chan<string>) => {
     // Put some items into the channel
     for (let ii = 0; ii < 6; ii++) {
         console.log(`producer sending item ${ii}`);
-        await chan.put('item ' + ii)
+        await chan.put('item ' + ii);
     }
     // Put "done" to signal completion
     // (We shouldn't close the channel to signal completion,

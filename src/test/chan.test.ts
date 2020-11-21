@@ -1,9 +1,7 @@
 import 'jest';
 
-import { Mutex } from '../mutex';
 import { Chan } from '../chan';
 import { sleep } from '../util';
-import { ENETDOWN } from 'constants';
 
 //process.on('unhandledRejection', (reason : any, p : any) => {
 //    console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -43,7 +41,7 @@ test('canGet and canPut with blocked read, buffer=0', async () => {
     expect(chan.canGetWithoutBlocking).toBe(false);
     let p = chan.get(50)
         .then(() => expect(true).toBe(false))
-        .catch(e => expect(''+e).toBe('ChannelTimeoutError: get() timed out'));
+        .catch(e => expect('' + e).toBe('ChannelTimeoutError: get() timed out'));
     expect(chan.canPutWithoutBlocking).toBe(true);
     expect(chan.canGetWithoutBlocking).toBe(false);
     await p;
@@ -55,7 +53,7 @@ test('canGet and canPut with blocked write, buffer=0', async () => {
     expect(chan.canGetWithoutBlocking).toBe(false);
     let p = chan.put(1, 50)
         .then(() => expect(true).toBe(false))
-        .catch(e => expect(''+e).toBe('ChannelTimeoutError: put() timed out'));
+        .catch(e => expect('' + e).toBe('ChannelTimeoutError: put() timed out'));
     expect(chan.canPutWithoutBlocking).toBe(false);
     expect(chan.canGetWithoutBlocking).toBe(true);
     await p;
@@ -89,7 +87,7 @@ for (let TIMEOUT of [0, 10]) {
 
         await chan.get(TIMEOUT)
             .then(() => expect(true).toBe(false))
-            .catch(e => expect(''+e).toBe('ChannelTimeoutError: get() timed out'));
+            .catch(e => expect('' + e).toBe('ChannelTimeoutError: get() timed out'));
     });
 }
 
@@ -98,7 +96,7 @@ for (let TIMEOUT of [0, 10]) {
         let chan = new Chan<number>();
         await chan.get(TIMEOUT)
             .then(() => expect(true).toBe(false))
-            .catch(e => expect(''+e).toBe('ChannelTimeoutError: get() timed out'));
+            .catch(e => expect('' + e).toBe('ChannelTimeoutError: get() timed out'));
         await chan.put(1);
         await chan.put(2);
         expect(await chan.get()).toBe(1);
@@ -117,7 +115,7 @@ for (let TIMEOUT of [0, 10]) {
             // write timeout
             await chan.put(999, TIMEOUT)
                 .then(() => expect(true).toBe(false))
-                .catch(e => expect(''+e).toBe('ChannelTimeoutError: put() timed out'));
+                .catch(e => expect('' + e).toBe('ChannelTimeoutError: put() timed out'));
         });
     }
 }
@@ -133,7 +131,7 @@ for (let TIMEOUT of [0, 10]) {
             // write timeout
             await chan.put(999, TIMEOUT)
                 .then(() => expect(true).toBe(false))
-                .catch(e => expect(''+e).toBe('ChannelTimeoutError: put() timed out'));
+                .catch(e => expect('' + e).toBe('ChannelTimeoutError: put() timed out'));
             // drain the buffer
             for (let ii = 0; ii < BUFFER; ii++) {
                 expect(await chan.get()).toBe(ii);
@@ -141,7 +139,7 @@ for (let TIMEOUT of [0, 10]) {
             // pull one more -- should not get anything
             await chan.get(TIMEOUT)
                 .then(() => expect(true).toBe(false))
-                .catch(e => expect(''+e).toBe('ChannelTimeoutError: get() timed out'));
+                .catch(e => expect('' + e).toBe('ChannelTimeoutError: get() timed out'));
         });
     }
 }
@@ -176,7 +174,7 @@ for (let BUFFER of [0, 1, 2, 3, 4, 1000, undefined]) {
         let thread1 = new Promise(async (resolve, reject) => {
             for (let ii = 0; ii < n; ii++) {
                 if (Math.random() < 0.5) {
-                    await sleep(Math.random()*10);
+                    await sleep(Math.random() * 10);
                 }
                 await chan.put(ii);
             }
@@ -185,14 +183,14 @@ for (let BUFFER of [0, 1, 2, 3, 4, 1000, undefined]) {
         let thread2 = new Promise(async (resolve, reject) => {
             for (let ii = 0; ii < n; ii++) {
                 if (Math.random() < 0.5) {
-                    await sleep(Math.random()*10);
+                    await sleep(Math.random() * 10);
                 }
                 expect(await chan.get()).toBe(ii);
             }
             // pull one more -- should not get anything
             await chan.get(0)
                 .then(() => expect(true).toBe(false))
-                .catch(e => expect(''+e).toBe('ChannelTimeoutError: get() timed out'));
+                .catch(e => expect('' + e).toBe('ChannelTimeoutError: get() timed out'));
             resolve();
         });
         await Promise.all([thread1, thread2]);
@@ -210,10 +208,10 @@ test(`closing channel with no activity happening`, async () => {
 
     await chan.get(0)
         .then(() => expect(true).toBe(false))
-        .catch(e => expect(''+e).toBe("ChannelIsClosedError: can't get() from a closed channel"));
+        .catch(e => expect('' + e).toBe("ChannelIsClosedError: can't get() from a closed channel"));
     await chan.put(999, 0)
         .then(() => expect(true).toBe(false))
-        .catch(e => expect(''+e).toBe("ChannelIsClosedError: can't put() to a closed channel"));
+        .catch(e => expect('' + e).toBe("ChannelIsClosedError: can't put() to a closed channel"));
 });
 
 test(`closing channel with pending writes and a full buffer`, async () => {
@@ -233,7 +231,7 @@ test(`closing channel with pending writes and a full buffer`, async () => {
 
     await p  // look at p again, and now it should have been rejected
         .then(() => expect(true).toBe(false))
-        .catch(e => expect(''+e).toBe("ChannelIsClosedError: can't put() to a closed channel"));
+        .catch(e => expect('' + e).toBe("ChannelIsClosedError: can't put() to a closed channel"));
 
 });
 
@@ -253,7 +251,7 @@ test(`closing channel with pending reads`, async () => {
 
     await p  // look at p again, and now it should have been rejected
         .then(() => expect(true).toBe(false))
-        .catch(e => expect(''+e).toBe("ChannelIsClosedError: can't get() from a closed channel"));
+        .catch(e => expect('' + e).toBe("ChannelIsClosedError: can't get() from a closed channel"));
 });
 
 test(`forEach with no timeout then closing channel`, async () => {
@@ -268,7 +266,7 @@ test(`forEach with no timeout then closing channel`, async () => {
         chan.close();
         resolve();
     });
-    let receivedItems : number[] = [];
+    let receivedItems: number[] = [];
     let thread2 = new Promise(async (resolve, reject) => {
         await sleep(40);
         await chan.forEach(item => {
@@ -282,7 +280,7 @@ test(`forEach with no timeout then closing channel`, async () => {
 
 test(`forEachAwait with no timeout blocking forever then closing channel`, async () => {
     let chan = new Chan<number>(100);
-    let receivedItems : number[] = [];
+    let receivedItems: number[] = [];
     let p1 = chan.forEachAwait(async (item) => {
         receivedItems.push(item);
         await sleep(100);
@@ -324,7 +322,7 @@ for (let TIMEOUT of [0, 10]) {
         // pull one more -- should not get anything
         await chan.get(0)
             .then(() => expect(true).toBe(false))
-            .catch(e => expect(''+e).toBe('ChannelTimeoutError: get() timed out'));
+            .catch(e => expect('' + e).toBe('ChannelTimeoutError: get() timed out'));
     });
 }
 
@@ -353,6 +351,6 @@ for (let TIMEOUT of [0, 10]) {
         // pull one more -- should not get anything
         await chan.get(0)
             .then(() => expect(true).toBe(false))
-            .catch(e => expect(''+e).toBe('ChannelTimeoutError: get() timed out'));
+            .catch(e => expect('' + e).toBe('ChannelTimeoutError: get() timed out'));
     });
 }

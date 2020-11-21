@@ -14,7 +14,7 @@ let makeItems = (name: string, count: number): Chan<string | null> => {
             // these channels to get out of sync with each other
             // for demo purposes
             sleep(Math.random() * 100);
-            let item = `${name}:${ii}`
+            let item = `${name}:${ii}`;
             console.log(`${name} sending ${item}`);
             await outChan.put(item);
         }
@@ -43,7 +43,7 @@ let zip = <T>(chan1: Chan<T | null>, chan2: Chan<T | null>): Chan<[T, T] | null>
         }
     });
     return outChan;
-}
+};
 
 
 let chA = makeItems('aa', 4);
@@ -54,7 +54,7 @@ chPairs.forEach(pair => {
     if (pair === null) {
         console.log('       zipped output is done');
     } else {
-        console.log('       zipped output:', pair)
+        console.log('       zipped output:', pair);
     }
 });
 

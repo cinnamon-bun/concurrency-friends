@@ -1,5 +1,2 @@
-
-export let sleep = (ms : number) : Promise<void> =>
-    new Promise<void>((resolve) => {
-        setTimeout(resolve, ms);
-    });
+export let sleep = (ms: number): Promise<void> =>
+    new Promise<void>(resolve => setTimeout(resolve, ms));

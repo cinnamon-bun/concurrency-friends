@@ -28,19 +28,19 @@ import stable = require('stable');  // stable array sort
 // T: input type of the handler function
 // R: return type of the handler
 
-export type ConveyorCb<T, R> = (item : T) => R | Promise<R>;
-export type ConveyorSortKeyFn<T> = (item : T) => any;
+export type ConveyorCb<T, R> = (item: T) => R | Promise<R>;
+export type ConveyorSortKeyFn<T> = (item: T) => any;
 
-type QueueItem<T, R> = [T, (x : R) => void, (err : any) => void];  // [item, resolve, reject]
-type Thunk = () => void
+type QueueItem<T, R> = [T, (x: R) => void, (err: any) => void];  // [item, resolve, reject]
+type Thunk = () => void;
 
 export class Conveyor<T, R> {
-    _queue : QueueItem<T, R>[] = [];  // item, resolve, reject
-    _handler : ConveyorCb<T, R>;
-    _sortKeyFn : ConveyorSortKeyFn<T> | null;
-    _wakeUpThread : Thunk | null = null;  // this is a promise resolve fn to let the thread continue running
+    _queue: QueueItem<T, R>[] = [];  // item, resolve, reject
+    _handler: ConveyorCb<T, R>;
+    _sortKeyFn: ConveyorSortKeyFn<T> | null;
+    _wakeUpThread: Thunk | null = null;  // this is a promise resolve fn to let the thread continue running
 
-    constructor(handler : ConveyorCb<T, R>, sortKeyFn? : ConveyorSortKeyFn<T>) {
+    constructor(handler: ConveyorCb<T, R>, sortKeyFn?: ConveyorSortKeyFn<T>) {
         // Create a new Conveyor with a sync or async handler function.
         // The handler should accept one item at a time, or undefined (when the conveyor becomes idle).
         // If sortKeyFn is provided, this is a priority queue.
@@ -53,7 +53,7 @@ export class Conveyor<T, R> {
         setImmediate(this._thread.bind(this));
     }
 
-    async push(item : T) : Promise<R> {
+    async push(item: T): Promise<R> {
         // Add an item into the conveyor.
         // After the handler finishes running on this item,
         // this promise will resolve with the return value of the handler,
@@ -61,11 +61,11 @@ export class Conveyor<T, R> {
 
         // make a promise that we can resolve later, and enqueue the item
         let prom = new Promise<R>((resolve, reject) => {
-            let queueItem : QueueItem<T, R> = [item, resolve, reject];
+            let queueItem: QueueItem<T, R> = [item, resolve, reject];
             this._queue.push(queueItem);
             // if this is a priority queue, sort the items after pushing the new one
             if (this._sortKeyFn !== null) {
-                stable.inplace(this._queue, (a : QueueItem<T, R>, b : QueueItem<T, R>) : number => {
+                stable.inplace(this._queue, (a: QueueItem<T, R>, b: QueueItem<T, R>): number => {
                     // istanbul ignore next
                     if (this._sortKeyFn === null) { return 0; }
                     let val1 = this._sortKeyFn(a[0]);
@@ -86,7 +86,7 @@ export class Conveyor<T, R> {
         return prom;
     }
 
-    async _thread() : Promise<void> {
+    async _thread(): Promise<void> {
         while (true) {
             if (this._queue.length > 0) {
                 // if there are things in the queue, process them

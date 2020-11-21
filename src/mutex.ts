@@ -43,21 +43,21 @@ import { Conveyor } from './conveyor';
 type UserFn<R> = () => R | Promise<R>;
 
 export class Mutex<R> {
-    _conveyor : Conveyor<UserFn<R>, R>;
+    _conveyor: Conveyor<UserFn<R>, R>;
     constructor() {
         // A conveyor full of functions.  At the end of the conveyor, this handler just runs the functions.
         this._conveyor = new Conveyor<UserFn<R>, R>(async userFn => {
             return await userFn();
         });
     }
-    async run(userFn : UserFn<R>) : Promise<R> {
+    async run(userFn: UserFn<R>): Promise<R> {
         // this will resolve when the userFn has finished running
         return await this._conveyor.push(userFn);
     }
 }
 
 export class PriorityMutex<R> {
-    _conveyor : Conveyor<[number, UserFn<R>], R>;  // pairs of [priority, userFn]
+    _conveyor: Conveyor<[number, UserFn<R>], R>;  // pairs of [priority, userFn]
     constructor() {
         // A conveyor full of functions.  At the end of the conveyor, this handler just runs the functions.
         let sortFn = ([priority, userFn]: [number, UserFn<R>]) => priority;
@@ -65,7 +65,7 @@ export class PriorityMutex<R> {
             return await userFn();
         }, sortFn);
     }
-    async run(priority : number, userFn : UserFn<R>) : Promise<any> {
+    async run(priority: number, userFn: UserFn<R>): Promise<any> {
         // lower priority goes first
         // this will resolve when the userFn has finished running
         return await this._conveyor.push([priority, userFn]);

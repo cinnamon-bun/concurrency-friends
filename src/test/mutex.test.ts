@@ -2,11 +2,10 @@ import 'jest';
 
 import { Mutex, PriorityMutex } from '../mutex';
 import { sleep } from '../util';
-import { AsyncResource } from 'async_hooks';
 
 test('return value', async () => {
     let mutex = new Mutex<number>();
-    let result = await mutex.run(async() : Promise<number> => {
+    let result = await mutex.run(async (): Promise<number> => {
         return 123;
     });
     expect(result).toEqual(123);
@@ -15,29 +14,29 @@ test('return value', async () => {
 test('error in sync function', async () => {
     let mutex = new Mutex<number>();
     try {
-        let result = await mutex.run((): number => {
+        await mutex.run((): number => {
             throw new Error('oops');
         });
         expect(true).toBe(false);
     } catch (err) {
-        expect(''+err).toBe('Error: oops');
+        expect('' + err).toBe('Error: oops');
     }
 });
 
 test('error in async function', async () => {
     let mutex = new Mutex<number>();
     try {
-        let result = await mutex.run(async (): Promise<number> => {
+        await mutex.run(async (): Promise<number> => {
             throw new Error('oops');
         });
         expect(true).toBe(false);
     } catch (err) {
-        expect(''+err).toBe('Error: oops');
+        expect('' + err).toBe('Error: oops');
     }
 });
 
 test('basics', async () => {
-    let globalId : number;
+    let globalId: number;
     let myFn = async () => {
         // this will pass if only one copy of it runs at once.
         let thisId = Math.floor(Math.random() * 10000);
@@ -63,8 +62,7 @@ test('basics', async () => {
 });
 
 test('should run in order - sync', async () => {
-    let globalId : number;
-    let array : number[] = [];
+    let array: number[] = [];
     let mutex = new Mutex<any>();
     mutex.run(() => array.push(0));
     mutex.run(() => array.push(1));
@@ -78,14 +76,13 @@ test('should run in order - sync', async () => {
 });
 
 test('should run in order - async', async () => {
-    let globalId : number;
-    let array : number[] = [];
-    let makePushFn = (n : number, d : number) => {
+    let array: number[] = [];
+    let makePushFn = (n: number, d: number) => {
         return async () => {
             await sleep(d);
             array.push(n);
         };
-    }
+    };
     let mutex = new Mutex<void>();
     mutex.run(makePushFn(0, 20));
     mutex.run(makePushFn(1, 8));
@@ -99,14 +96,13 @@ test('should run in order - async', async () => {
 });
 
 test('priority mutex but with regular mutex', async () => {
-    let globalId : number;
-    let array : number[] = [];
-    let makePushFn = (n : number, d : number) => {
+    let array: number[] = [];
+    let makePushFn = (n: number, d: number) => {
         return async () => {
             await sleep(d);
             array.push(n);
         };
-    }
+    };
     let mutex = new Mutex<void>();
     mutex.run(makePushFn(0, 50));
     mutex.run(makePushFn(3, 50));
@@ -121,25 +117,24 @@ test('priority mutex but with regular mutex', async () => {
 });
 
 test('priority mutex', async () => {
-    let globalId : number;
-    let array : number[] = [];
-    let makePushFn = (n : number, d : number) => {
+    let array: number[] = [];
+    let makePushFn = (n: number, d: number) => {
         return async () => {
             await sleep(d);
             array.push(n);
         };
-    }
+    };
     let mutex = new PriorityMutex<void>();
     mutex.run(0, makePushFn(0, 50));
     mutex.run(3, makePushFn(3, 50));
     mutex.run(1, makePushFn(1, 50));
     mutex.run(2, makePushFn(2, 50));
-    await mutex.run(999, () => {});  // wait until the queue is empty
+    await mutex.run(999, () => { });  // wait until the queue is empty
     expect(array).toEqual([0, 1, 2, 3]);
     mutex.run(0, makePushFn(0, 50));
     mutex.run(3, makePushFn(3, 50));
     mutex.run(1, makePushFn(1, 50));
     await mutex.run(2, makePushFn(2, 50));
-    await mutex.run(999, () => {});
+    await mutex.run(999, () => { });
     expect(array).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
 });
