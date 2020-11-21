@@ -38,36 +38,36 @@ You can await mutex.run to wait until your specific function is done running:
 
 import { Conveyor } from './conveyor';
 
-type AsyncThunk<R> = () => Promise<R>
-type Thunk<R> = () => R
-type AnyThunk<R> = Thunk<R> | AsyncThunk<R>;
+// R: the return type of any function that can go into the mutex
+
+type UserFn<R> = () => R | Promise<R>;
 
 export class Mutex<R> {
-    conveyor : Conveyor<AnyThunk<R>, R>;
+    _conveyor : Conveyor<UserFn<R>, R>;
     constructor() {
         // A conveyor full of functions.  At the end of the conveyor, this handler just runs the functions.
-        this.conveyor = new Conveyor<AnyThunk<R>, R>(async userFn => {
+        this._conveyor = new Conveyor<UserFn<R>, R>(async userFn => {
             return await userFn();
         });
     }
-    async run(userFn : AnyThunk<R>) : Promise<R> {
+    async run(userFn : UserFn<R>) : Promise<R> {
         // this will resolve when the userFn has finished running
-        return await this.conveyor.push(userFn);
+        return await this._conveyor.push(userFn);
     }
 }
 
 export class PriorityMutex<R> {
-    conveyor : Conveyor<[number, AnyThunk<R>], R>;
+    _conveyor : Conveyor<[number, UserFn<R>], R>;  // pairs of [priority, userFn]
     constructor() {
         // A conveyor full of functions.  At the end of the conveyor, this handler just runs the functions.
-        this.conveyor = new Conveyor<[number, AnyThunk<R>], R>(async x => {
-            let [n, userFn] = x;
+        let sortFn = ([priority, userFn]: [number, UserFn<R>]) => priority;
+        this._conveyor = new Conveyor<[number, UserFn<R>], R>(async ([priority, userFn]) => {
             return await userFn();
-        }, x => x[0]);
+        }, sortFn);
     }
-    async run(priority : number, userFn : AnyThunk<R>) : Promise<any> {
+    async run(priority : number, userFn : UserFn<R>) : Promise<any> {
         // lower priority goes first
         // this will resolve when the userFn has finished running
-        return await this.conveyor.push([priority, userFn]);
+        return await this._conveyor.push([priority, userFn]);
     }
 }

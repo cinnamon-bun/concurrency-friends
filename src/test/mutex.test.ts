@@ -12,6 +12,30 @@ test('return value', async () => {
     expect(result).toEqual(123);
 });
 
+test('error in sync function', async () => {
+    let mutex = new Mutex<number>();
+    try {
+        let result = await mutex.run((): number => {
+            throw new Error('oops');
+        });
+        expect(true).toBe(false);
+    } catch (err) {
+        expect(''+err).toBe('Error: oops');
+    }
+});
+
+test('error in async function', async () => {
+    let mutex = new Mutex<number>();
+    try {
+        let result = await mutex.run(async (): Promise<number> => {
+            throw new Error('oops');
+        });
+        expect(true).toBe(false);
+    } catch (err) {
+        expect(''+err).toBe('Error: oops');
+    }
+});
+
 test('basics', async () => {
     let globalId : number;
     let myFn = async () => {
@@ -41,7 +65,7 @@ test('basics', async () => {
 test('should run in order - sync', async () => {
     let globalId : number;
     let array : number[] = [];
-    let mutex = new Mutex<void>();
+    let mutex = new Mutex<any>();
     mutex.run(() => array.push(0));
     mutex.run(() => array.push(1));
     await mutex.run(() => array.push(2));
