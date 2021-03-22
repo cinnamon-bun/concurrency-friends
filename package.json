@@ -17,7 +17,7 @@
     "test": "jest src/test/*.ts --verbose",
     "test-conveyor": "jest src/test/conveyor.test.ts --verbose",
     "test-coverage": "jest src/test/*.ts --verbose --coverage",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
   "devDependencies": {
     "@types/jest": "^26.0.15",
