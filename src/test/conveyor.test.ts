@@ -41,13 +41,13 @@ test('only one async function running at once', async () => {
         await sleep(Math.random() * 10);
         expect(globalId).toEqual(thisId);
     });
-    let thread1 = new Promise(async (resolve, reject) => {
+    let thread1 = new Promise<void>(async (resolve, reject) => {
         for (let ii = 0; ii < 5; ii++) {
             await conv.push(ii);
         }
         resolve();
     });
-    let thread2 = new Promise(async (resolve, reject) => {
+    let thread2 = new Promise<void>(async (resolve, reject) => {
         for (let ii = 100; ii < 105; ii++) {
             await conv.push(ii);
         }

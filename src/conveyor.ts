@@ -102,7 +102,7 @@ export class Conveyor<T, R> {
                 // nothing in the queue, so go to sleep by awaiting a promise that
                 // we'll resolve later when a push happens.
                 await new Promise((resolve, reject) => {
-                    this._wakeUpThread = resolve;
+                    this._wakeUpThread = resolve as Thunk;
                 });
             }
         }

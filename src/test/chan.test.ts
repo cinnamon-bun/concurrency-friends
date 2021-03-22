@@ -147,7 +147,7 @@ for (let TIMEOUT of [0, 10]) {
 for (let BUFFER of [0, 1, 2, 3, 4, 1000, undefined]) {
     test(`two threads.  buffer=${BUFFER}`, async () => {
         let chan = new Chan<number>(BUFFER);
-        let thread1 = new Promise(async (resolve, reject) => {
+        let thread1 = new Promise<void>(async (resolve, reject) => {
             await chan.put(1);
             await chan.put(2);
             await sleep(60);
@@ -155,7 +155,7 @@ for (let BUFFER of [0, 1, 2, 3, 4, 1000, undefined]) {
             await chan.put(4);
             resolve();
         });
-        let thread2 = new Promise(async (resolve, reject) => {
+        let thread2 = new Promise<void>(async (resolve, reject) => {
             await sleep(40);
             expect(await chan.get()).toBe(1);
             expect(await chan.get()).toBe(2);
@@ -171,7 +171,7 @@ for (let BUFFER of [0, 1, 2, 3, 4, 1000, undefined]) {
     test(`two threads fuzz test.  buffer=${BUFFER}`, async () => {
         let n = 50;
         let chan = new Chan<number>(BUFFER);
-        let thread1 = new Promise(async (resolve, reject) => {
+        let thread1 = new Promise<void>(async (resolve, reject) => {
             for (let ii = 0; ii < n; ii++) {
                 if (Math.random() < 0.5) {
                     await sleep(Math.random() * 10);
@@ -180,7 +180,7 @@ for (let BUFFER of [0, 1, 2, 3, 4, 1000, undefined]) {
             }
             resolve();
         });
-        let thread2 = new Promise(async (resolve, reject) => {
+        let thread2 = new Promise<void>(async (resolve, reject) => {
             for (let ii = 0; ii < n; ii++) {
                 if (Math.random() < 0.5) {
                     await sleep(Math.random() * 10);
@@ -256,7 +256,7 @@ test(`closing channel with pending reads`, async () => {
 
 test(`forEach with no timeout then closing channel`, async () => {
     let chan = new Chan<number>(0);
-    let thread1 = new Promise(async (resolve, reject) => {
+    let thread1 = new Promise<void>(async (resolve, reject) => {
         await chan.put(1);
         await chan.put(2);
         await sleep(60);
@@ -267,7 +267,7 @@ test(`forEach with no timeout then closing channel`, async () => {
         resolve();
     });
     let receivedItems: number[] = [];
-    let thread2 = new Promise(async (resolve, reject) => {
+    let thread2 = new Promise<void>(async (resolve, reject) => {
         await sleep(40);
         await chan.forEach(item => {
             receivedItems.push(item);
