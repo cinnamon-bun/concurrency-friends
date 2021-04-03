@@ -287,6 +287,34 @@ await mutex.run(async () => {
 // those specific things are now done
 ```
 
+## Return values
+
+If your function returns something, you can get it back with `await`.
+
+```ts
+// here's a function to try out
+let double = async (n: number): Promise<number> => {
+    return n * 2;
+}
+
+// Wait for our callback to run, and get the returned value.
+let six = await mutex.run(async () => {
+    return await double(3);
+});
+
+// We can't do this because mutex.run doesn't have a
+// way to pass function parameters to the function.
+// PRs accepted :)
+//
+//     let six = await mutex.run(double, 3);
+```
+
+## Errors
+
+If the function you're calling in `mutex.run` throws an error, the error will emerge where you have `await`ed it, as you'd expect.
+
+## PriorityMutex
+
 There's also a `PriorityMutex` which lets you provide a priority number with each function.  When there are multiple functions waiting in the queue, the **lower** numbered ones will run first.
 
 ```ts
