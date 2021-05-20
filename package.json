@@ -14,9 +14,12 @@
   "scripts": {
     "clean": "rm -rf build coverage .nyc_output",
     "build": "tsc",
-    "test": "jest src/test/*.ts --verbose",
+    "test": "jest src/test/*.ts",
+    "test-coverage": "jest src/test/*.ts --coverage",
+    "test-chan": "jest src/test/chan.test.ts --verbose",
+    "test-chan2": "jest src/test/chan2.test.ts --verbose",
     "test-conveyor": "jest src/test/conveyor.test.ts --verbose",
-    "test-coverage": "jest src/test/*.ts --verbose --coverage",
+    "test-mutex": "jest src/test/mutex.test.ts --verbose",
     "depchart-basic": "mkdir   -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts `find src | grep '/example/'` `find src | grep '/test/'` --rankdir LR -o depchart/depchart-basic --node_modules omit",
     "depchart-all": "mkdir     -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts                                                          --rankdir LR -o depchart/depchart-all     --node_modules omit",
     "depchart": "yarn depchart-all && yarn depchart-basic",
@@ -43,6 +46,7 @@
       "tsx",
       "js",
       "jsx"
-    ]
+    ],
+    "slowTestThreshold": 10
   }
 }

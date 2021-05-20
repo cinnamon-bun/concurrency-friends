@@ -64,14 +64,14 @@ export class Chan<T> {
         this._waitingGets = [];
         this._waitingPuts = [];
     }
+    get isClosed(): boolean {
+        return this._isClosed;
+    }
     get capacity(): number | null {
         return this._maxLen;
     }
     get length(): number {
         return this._buffer.length;
-    }
-    get isClosed(): boolean {
-        return this._isClosed;
     }
     get canPutWithoutBlocking(): boolean {
         if (this._isClosed) { return false; }

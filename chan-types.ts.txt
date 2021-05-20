@@ -1,0 +1,42 @@
+
+interface IChan<T> {
+    //constructor(maxLen: number | null = null);
+
+    close(): void;
+    isClosed(): boolean;
+
+    capacity(): number | null;
+    length(): number;
+
+    canPutWithoutBlocking(): boolean;
+    canGetWithoutBlocking(): boolean;
+
+    put(val: T, timeout: number | null): Promise<void>;
+    get(timeout: number | null): Promise<T>;
+
+    forEach(fn: (item: T) => void, timeout: number | null): Promise<void>;
+    forEachAwait(fn: (item: T) => Promise<void>, timeout: number | null): Promise<void>;
+};
+
+interface IChan2<T> {
+    //constructor(capacity: number | null = null);
+
+    close(): void;
+    isClosed(): boolean;
+    seal(): void;
+    isSealed(): boolean;
+
+    capacity(): number | null;
+    itemsInQueue(): number;
+    itemsInQueueAndWaitingPuts(): number;
+    numWaitingGets(): number;
+    isIdle(): boolean;
+
+    canImmediatelyPut(): boolean;
+    canImmediatelyGet(): boolean;
+
+    put(item: T, opts?: { timeout: number | null }): Promise<void>;
+    get(opts?: { timeout: number | null }): Promise<T>;
+
+    forEach(cb: (item: T) => void | Promise<void>, opts?: { timeout: number | null }): Promise<void>;
+}
