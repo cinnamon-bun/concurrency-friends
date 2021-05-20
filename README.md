@@ -4,27 +4,67 @@
 
 Status: tested, working, but not production ready.
 
-TODO: test when user-provided functions throw errors.
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Contents**
 
----
+- [Install](#install)
+- [Overview](#overview)
+  - [Chan](#chan)
+    - [PUT](#put)
+    - [GET](#get)
+  - [Conveyor](#conveyor)
+  - [Mutex](#mutex)
+- [Chan in detail](#chan-in-detail)
+- [Conveyor in detail](#conveyor-in-detail)
+- [Mutex in detail](#mutex-in-detail)
+  - [Return values](#return-values)
+  - [Errors](#errors)
+  - [PriorityMutex](#prioritymutex)
+- [Develop](#develop)
+  - [File dependency chart](#file-dependency-chart)
+  - [Updating the README table of contents](#updating-the-readme-table-of-contents)
+  - [TODO](#todo)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+# Install
+
+`npm install concurrency-friends`
+
+or
+
+`yarn add concurrency-friends`
+
+# Overview
 
 ## Chan
 
 ```
-put(item)-->   item   item  item      item        get()--> item
-              ---> ---> ---> ---> ---> ---> --->
-                     t h e    q u e u e
+put(item)-->   item  item      item    get()--> item
+              ---> ---> ---> ---> --->
+                     the queue         
 ```
 
-A message queue, like in Go.  Put items in, get items out.
+A message queue, like in Go.  Put items in, get items out in the same order.
 
-`await put(item)` will continue when the item has been added into the queue, which can be of limited length.
+Use a Chan to move items between different "threads" in your code (e.g. different async functions running at the same time).
 
-`await get()` returns the next item in the queue, or waits for one to appear.
+The queue can be of limited length.
 
-Use a Chan to move items between different "threads" (async functions).
+### PUT
 
----
+Add an item to the queue.
+
+`await chan.put(item)` waits until the queue has space for an extra item, then adds it and returns.
+
+`chan.put(item)` adds an item and returns immediately, even if the queue is full.  This is usually not what you want; use `await` instead.
+
+### GET
+
+Get an item from the queue.
+
+`await chan.get()` gets the next item and removes it from the queue.  If the queue is empty, this waits for an item to appear.
 
 ## Conveyor
 
@@ -43,8 +83,6 @@ Use a Conveyor when you want to process items one at a time, and you want to kno
 
 Conveyors can also act as priority queues, prioritizing certain items.
 
----
-
 ## Mutex
 ```
 run(fn)-->   fn    fn    fn     fn             call the fn
@@ -58,8 +96,6 @@ Put *functions* in.  They are run in order, **one at a time**.
 Use a Mutex when you have a variety of long-running functions that should only be allowed to run one at a time, not overlapping in time.
 
 Mutexes can also act as priority queues, prioritizing certain functions.
-
----
 
 # Chan in detail
 
@@ -333,3 +369,29 @@ mutex.run(2, () => console.log('two'));
 //     three
 //     seven
 ```
+
+# Develop
+
+## File dependency chart
+
+`A --> B` means file A imports file B.
+
+Just the basics:
+
+![](depchart/depchart-basic.png)
+
+All the files:
+
+![](depchart/depchart-all.png)
+
+To regenerate these diagrams, run `yarn depchart`.  You'll need `graphviz` installed.
+
+## Updating the README table of contents
+
+`yarn toc`
+
+## TODO
+
+* test when user-provided functions throw errors
+* improve chan.forEach
+* add chan.end()

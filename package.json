@@ -17,10 +17,15 @@
     "test": "jest src/test/*.ts --verbose",
     "test-conveyor": "jest src/test/conveyor.test.ts --verbose",
     "test-coverage": "jest src/test/*.ts --verbose --coverage",
+    "depchart-basic": "mkdir   -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts `find src | grep '/example/'` `find src | grep '/test/'` --rankdir LR -o depchart/depchart-basic --node_modules omit",
+    "depchart-all": "mkdir     -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts                                                          --rankdir LR -o depchart/depchart-all     --node_modules omit",
+    "depchart": "yarn depchart-all && yarn depchart-basic",
+    "toc": "doctoc --title '**Contents**' README.md",
     "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
   "devDependencies": {
     "@types/jest": "^26.0.15",
+    "doctoc": "^2.0.0",
     "jest": "^26.6.3",
     "ts-jest": "^26.4.4",
     "typescript": "^4.1.0"

@@ -1,0 +1,30 @@
+
+digraph G {
+    //splines=line;
+    //splines=polyline;
+    splines=true;
+    rankdir=LR;
+    //newrank=true;
+    compound=true;
+    graph [fontname = "helvetica"];  // dpi=72
+    node [fontname = "helvetica"];
+    edge [fontname = "helvetica"];
+    
+    // files in their folder clusters
+
+    subgraph cluster5960195471 {
+        label=<<b>src</b>>;
+        style="rounded";
+        color=bisque4;
+        penwidth=2;
+                
+        "src/chan.ts" [label="chan.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+        "src/conveyor.ts" [label="conveyor.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+        "src/mutex.ts" [label="mutex.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+        "src/util.ts" [label="util.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+    }
+
+    // edges between files
+    "src/mutex.ts" -> "src/conveyor.ts" [penwidth=2; color=darkslategray4];
+
+}
