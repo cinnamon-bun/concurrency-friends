@@ -291,11 +291,22 @@ export class Chan<T> {
                 this.close();
             }
 
+            // if there are waiting puts, get the next one and put it into the queue
+            // to keep the queue full
+            if (this._waitingPuts.length > 0 && this._capacity !== null && this._queue.length < this._capacity) {
+                log(`...get: A2. now there is space in the queue; getting a waiting put to fill the space`);
+                let { item, deferred } = this._waitingPuts.shift() as { item: T, deferred: Deferred<void> };
+                this._queue.push(item);
+                // resolve the waitingPut promise
+                deferred.resolve(undefined);
+            }
+
             log(`...get is done.`);
             return item;
         }
 
-        // B. there are waiting puts: grab one
+        // B. queue is empty but there are waiting puts: grab one directly
+        // (this happens when queue capacity is zero)
         if (this._waitingPuts.length > 0) {
             log(`...get: B. get item from a waiting put and resolve the waiting put`);
             let { item, deferred } = this._waitingPuts.shift() as { item: T, deferred: Deferred<void> };

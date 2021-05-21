@@ -216,6 +216,42 @@ describe('capacity = 0, blocked gets', () => {
     });
 });
 
+describe('all the different states', () => {
+    test('pull from queue, also pulls from waiting gets', async () => {
+        let chan3 = new Chan<number>(3);
+        await chan3.put(10);
+        await chan3.put(20);
+        await chan3.put(30);
+        chan3.put(40);
+        chan3.put(50);
+        chan3.put(60);
+        expect(chan3.itemsInQueue).toBe(3);
+        expect(chan3.itemsInQueueAndWaitingPuts).toBe(6);
+
+        // this should pull an item from the queue,
+        // and grab the next waiting get and put
+        // it into the queue
+        expect(await chan3.get()).toBe(10);
+        expect(chan3.itemsInQueue).toBe(3);
+        expect(chan3.itemsInQueueAndWaitingPuts).toBe(5);
+
+        expect(await chan3.get()).toBe(20);
+        expect(await chan3.get()).toBe(30);
+        expect(chan3.itemsInQueue).toBe(3);
+        expect(chan3.itemsInQueueAndWaitingPuts).toBe(3);
+
+        // now there are no waiting puts
+        // and we start actually eating away at the queue
+        expect(await chan3.get()).toBe(40);
+        expect(chan3.itemsInQueueAndWaitingPuts).toBe(2);
+
+        expect(await chan3.get()).toBe(50);
+        expect(await chan3.get()).toBe(60);
+        expect(chan3.itemsInQueueAndWaitingPuts).toBe(0);
+        expect(chan3.isIdle).toBe(true);
+    });
+});
+
 describe('first in, first out', () => {
     test('first in, first out, put all then get all', async () => {
         let chanInf = new Chan<number>();
