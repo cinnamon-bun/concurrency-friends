@@ -1,4 +1,4 @@
-import { Chan } from '../chan';
+import { Chan2 } from '../chan2';
 import { sleep } from '../util';
 
 // Make a producer "thread" and a consumer "thread".
@@ -6,7 +6,7 @@ import { sleep } from '../util';
 // In this example we make our own channel and hand it to 
 // the functions; they don't have to create any channels.
 
-let producer = async (chan: Chan<string>) => {
+let producer = async (chan: Chan2<string>) => {
     // Put some items into the channel
     for (let ii = 0; ii < 6; ii++) {
         console.log(`producer sending item ${ii}`);
@@ -14,13 +14,13 @@ let producer = async (chan: Chan<string>) => {
     }
     // Put "done" to signal completion
     // (We shouldn't close the channel to signal completion,
-    // because that would delete any items still in the buffer.)
+    // because that would delete any items still in the queue.)
     console.log('producer sending "done"');
     await chan.put('done');
     console.log('producer is stoppping.');
 };
 
-let consumer = async (chan: Chan<string>) => {
+let consumer = async (chan: Chan2<string>) => {
     while (true) {
         let item = await chan.get();
         console.log(`      consumer got ${item}`);
@@ -35,8 +35,8 @@ let consumer = async (chan: Chan<string>) => {
     console.log('      consumer is stopping.');
 };
 
-// make a channel with a buffer size of 3
-let chan = new Chan<string>(3);
+// make a channel with a queue size of 3
+let chan = new Chan2<string>(3);
 
 // run the threads simultaneously
 producer(chan);
