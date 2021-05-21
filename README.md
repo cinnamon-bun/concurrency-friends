@@ -50,21 +50,7 @@ A message queue, like in Go.  Put items in, get items out in the same order.
 
 Use a Chan to move items between different "threads" in your code (e.g. different async functions running at the same time).
 
-The queue can be of limited length.
-
-### PUT
-
-Add an item to the queue.
-
-`await chan.put(item)` waits until the queue has space for an extra item, then adds it and returns.
-
-`chan.put(item)` adds an item and returns immediately, even if the queue is full.  This is usually not what you want; use `await` instead.
-
-### GET
-
-Get an item from the queue.
-
-`await chan.get()` gets the next item and removes it from the queue.  If the queue is empty, this waits for an item to appear.
+The queue can be of limited length, even zero, or unlimited length.
 
 ## Conveyor
 
@@ -99,6 +85,101 @@ Mutexes can also act as priority queues, prioritizing certain functions.
 
 # Chan in detail
 
+## Chan API
+
+---
+
+### Put
+
+Add an item to the queue.
+
+`await chan.put(item)` waits until the queue has space for an extra item, then adds it and returns.
+
+This can throw the following exceptions:
+* `ChannelTimeoutError` -- if a timeout is specified (see below) and it happens.
+* `ChannelIsClosedError` -- when putting to a Chan that's been `close`d.
+* `ChannelIsSealedError`  -- when putting to a Chan that's been `seal`ed.
+
+### Put with timeout
+
+`await chan.put(item, { timeout: number | null })`
+
+Try to put an item, but if there's no room for it within the given number of milliseconds, throw a `ChannelTimeoutError`.
+
+`null` means no timeout, and is the default.
+
+> **Remember to `await`**
+> 
+> `chan.put(item)` adds an item and returns immediately  If the queue is full, your item is in limbo until it eventually finds room in the queue, but it can be lost if the Chan is `seal`ed.  This is usually not what you want; use `await` instead.
+
+---
+
+### Get
+
+Get an item from the queue.
+
+`await chan.get()` gets the next item and removes it from the queue.  If the queue is empty, this waits for an item to appear.
+
+This can throw the following exceptions:
+* `ChannelTimeoutError` -- if a timeout is specified (see below) and it happens.
+* `ChannelIsClosedError` -- when getting from a Chan that's been `close`d.
+* `ChannelIsSealedError`  -- when getting from a Chan that's been `seal`ed and is empty.  (You can `get` existing items out of a `seal`ed Chan.)
+
+### Get with timeout
+
+`await chan.get({ timeout: number | null })`
+
+Try to get an item, but if there are none to get within the given number of milliseconds, throw a `ChannelTimeoutError`.
+
+---
+
+### Close, isClosed
+
+`chan.close()`
+
+Close a Chan.
+
+Use this when you're done with a chan and you want to do a hard shutdown of whatever is happening on the other side of it.
+
+Attempts to `get` or `put` will fail with a `ChannelIsClosedError`.
+
+A closed Chan immediately discards all items from its queue.  All waiting promises (gets or puts) will immediately reject with a `ChannelIsClosedError`.
+
+A closed Chan cannot be opened again.
+
+`chan.isClosed` -- a read-only property that's true or false: is a Chan closed?
+
+---
+
+### Seal, isSealed
+
+`chan.seal()`
+
+Seal a Chan.  This caps the input side of the queue so that no new items can be `put`, but existing items can still be obtained with `get`.  Once the queue becomes empty, it will be `close()`d for you.
+
+Use this when you're done adding items to a Chan and want to signal that the data is complete, and you want to gently give consumers a chance to finish getting all the items out.
+
+Trying to `put` into a sealed Chan will throw a `ChannelIsSealedError`.
+
+Trying to `get` from sealed Chan will work until the queue is empty, then it will throw a `ChannelIsSealedError`.
+
+A Chan remains "sealed" after it gets automatically "closed"; it's both at the same time.  When it's both, it emits `ChannelIsSealedError`s instead of `ChannelIsClosedError`s to remind you that it was closed because it was sealed, not closed in anger.
+
+A sealed Chan cannot be un-sealed again.
+
+`chan.isSealed` -- a read-only property that's true or false: is a Chan sealed?
+
+---
+
+### ForEach
+
+---
+
+### Misc other information
+
+---
+
+## Chan Details
 Channels similar to the ones in Go.
 
 A `Chan` is a queue of items.  You add items with `put(item)`, and get them with `get()`.  They come out in the same order they went in.
