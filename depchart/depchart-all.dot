@@ -12,7 +12,7 @@ digraph G {
     
     // files in their folder clusters
 
-    subgraph cluster2843651513 {
+    subgraph cluster1055115927 {
         label=<<b>src</b>>;
         style="rounded";
         color=bisque4;
@@ -20,10 +20,11 @@ digraph G {
                 
         "src/chan.ts" [label="chan.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         "src/conveyor.ts" [label="conveyor.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+        "src/deferred.ts" [label="deferred.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         "src/mutex.ts" [label="mutex.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         "src/util.ts" [label="util.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
 
-        subgraph cluster6036122416 {
+        subgraph cluster640717230 {
             label=<<b>example</b>>;
             style="rounded,filled";
             fillcolor=bisque;
@@ -31,10 +32,11 @@ digraph G {
             penwidth=2;
                 
             "src/example/chan-producer-consumer.ts" [label="chan-producer-consumer.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+            "src/example/chan-zip-seal.ts" [label="chan-zip-seal.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
             "src/example/chan-zip.ts" [label="chan-zip.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         }
 
-        subgraph cluster912766182 {
+        subgraph cluster3159672447 {
             label=<<b>test</b>>;
             style="rounded,filled";
             fillcolor=bisque;
@@ -48,8 +50,11 @@ digraph G {
     }
 
     // edges between files
+    "src/chan.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
     "src/example/chan-producer-consumer.ts" -> "src/chan.ts" [penwidth=2; color=darkslategray4];
     "src/example/chan-producer-consumer.ts" -> "src/util.ts" [penwidth=2; color=darkslategray4];
+    "src/example/chan-zip-seal.ts" -> "src/chan.ts" [penwidth=2; color=darkslategray4];
+    "src/example/chan-zip-seal.ts" -> "src/util.ts" [penwidth=2; color=darkslategray4];
     "src/example/chan-zip.ts" -> "src/chan.ts" [penwidth=2; color=darkslategray4];
     "src/example/chan-zip.ts" -> "src/util.ts" [penwidth=2; color=darkslategray4];
     "src/mutex.ts" -> "src/conveyor.ts" [penwidth=2; color=darkslategray4];

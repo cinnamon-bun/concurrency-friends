@@ -10,7 +10,7 @@
 <title>G</title>
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-203 226,-203 226,4 -4,4"/>
 <g id="clust1" class="cluster">
-<title>cluster5960195471</title>
+<title>cluster2311094660</title>
 <path fill="none" stroke="#8b7d6b" stroke-width="2" d="M20,-8C20,-8 202,-8 202,-8 208,-8 214,-14 214,-20 214,-20 214,-179 214,-179 214,-185 208,-191 202,-191 202,-191 20,-191 20,-191 14,-191 8,-185 8,-179 8,-179 8,-20 8,-20 8,-14 14,-8 20,-8"/>
 <text text-anchor="start" x="100.5" y="-176.8" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="14.00">src</text>
 </g>
@@ -20,6 +20,18 @@
 <path fill="#79cdcd" stroke="#79cdcd" d="M68,-160C68,-160 32,-160 32,-160 26,-160 20,-154 20,-148 20,-148 20,-136 20,-136 20,-130 26,-124 32,-124 32,-124 68,-124 68,-124 74,-124 80,-130 80,-136 80,-136 80,-148 80,-148 80,-154 74,-160 68,-160"/>
 <text text-anchor="middle" x="50" y="-138.3" font-family="Helvetica,sans-Serif" font-size="14.00">chan.ts</text>
 </g>
+<!-- src/deferred.ts -->
+<g id="node3" class="node">
+<title>src/deferred.ts</title>
+<path fill="#79cdcd" stroke="#79cdcd" d="M191.5,-160C191.5,-160 134.5,-160 134.5,-160 128.5,-160 122.5,-154 122.5,-148 122.5,-148 122.5,-136 122.5,-136 122.5,-130 128.5,-124 134.5,-124 134.5,-124 191.5,-124 191.5,-124 197.5,-124 203.5,-130 203.5,-136 203.5,-136 203.5,-148 203.5,-148 203.5,-154 197.5,-160 191.5,-160"/>
+<text text-anchor="middle" x="163" y="-138.3" font-family="Helvetica,sans-Serif" font-size="14.00">deferred.ts</text>
+</g>
+<!-- src/chan.ts&#45;&gt;src/deferred.ts -->
+<g id="edge1" class="edge">
+<title>src/chan.ts&#45;&gt;src/deferred.ts</title>
+<path fill="none" stroke="#528b8b" stroke-width="2" d="M80.16,-142C89.9,-142 101.04,-142 111.91,-142"/>
+<polygon fill="#528b8b" stroke="#528b8b" stroke-width="2" points="112.18,-145.5 122.18,-142 112.18,-138.5 112.18,-145.5"/>
+</g>
 <!-- src/conveyor.ts -->
 <g id="node2" class="node">
 <title>src/conveyor.ts</title>
@@ -27,19 +39,19 @@
 <text text-anchor="middle" x="163" y="-84.3" font-family="Helvetica,sans-Serif" font-size="14.00">conveyor.ts</text>
 </g>
 <!-- src/mutex.ts -->
-<g id="node3" class="node">
+<g id="node4" class="node">
 <title>src/mutex.ts</title>
 <path fill="#79cdcd" stroke="#79cdcd" d="M72,-106C72,-106 28,-106 28,-106 22,-106 16,-100 16,-94 16,-94 16,-82 16,-82 16,-76 22,-70 28,-70 28,-70 72,-70 72,-70 78,-70 84,-76 84,-82 84,-82 84,-94 84,-94 84,-100 78,-106 72,-106"/>
 <text text-anchor="middle" x="50" y="-84.3" font-family="Helvetica,sans-Serif" font-size="14.00">mutex.ts</text>
 </g>
 <!-- src/mutex.ts&#45;&gt;src/conveyor.ts -->
-<g id="edge1" class="edge">
+<g id="edge2" class="edge">
 <title>src/mutex.ts&#45;&gt;src/conveyor.ts</title>
 <path fill="none" stroke="#528b8b" stroke-width="2" d="M84,-88C92.09,-88 100.94,-88 109.68,-88"/>
 <polygon fill="#528b8b" stroke="#528b8b" stroke-width="2" points="109.85,-91.5 119.85,-88 109.85,-84.5 109.85,-91.5"/>
 </g>
 <!-- src/util.ts -->
-<g id="node4" class="node">
+<g id="node5" class="node">
 <title>src/util.ts</title>
 <path fill="#79cdcd" stroke="#79cdcd" d="M65,-52C65,-52 35,-52 35,-52 29,-52 23,-46 23,-40 23,-40 23,-28 23,-28 23,-22 29,-16 35,-16 35,-16 65,-16 65,-16 71,-16 77,-22 77,-28 77,-28 77,-40 77,-40 77,-46 71,-52 65,-52"/>
 <text text-anchor="middle" x="50" y="-30.3" font-family="Helvetica,sans-Serif" font-size="14.00">util.ts</text>
