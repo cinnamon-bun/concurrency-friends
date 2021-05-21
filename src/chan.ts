@@ -359,7 +359,7 @@ export class Chan<T> {
         return getDeferred.promise;
     }
 
-    async forEach(cb: (item: T) => void | Promise<void>, opts?: { timeout: number | null }): Promise<void> {
+    async forEach(cb: (item: T) => any | Promise<any>, opts?: { timeout: number | null }): Promise<void> {
         // pull items from the channel and run cb(item) on each one.
         // block until the channel is closed or sealed-and-drained, or timeout occurs while reading.
         // if cb throws an error, it will propagate upwards and stop the forEach loop.
@@ -370,6 +370,7 @@ export class Chan<T> {
             try {
                 item = await this.get(opts);
             } catch (err) {
+                // stop if the get fails
                 if (err instanceof ChannelIsClosedError) { return; }
                 if (err instanceof ChannelIsSealedError) { return; }
                 /* istanbul ignore else */
@@ -377,7 +378,13 @@ export class Chan<T> {
                 /* istanbul ignore next */
                 throw err;  // should never get here
             }
-            await cb(item);  // if this throws an error, don't catch it; let it propagate upwards
+            // run the callback.
+            // if this throws an error, don't catch it; let it propagate upwards
+            let keepRunning = await cb(item);
+            // stop if the callback returns false
+            if (keepRunning === false) {
+                return;
+            }
         }
     }
 

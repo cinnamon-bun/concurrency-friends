@@ -11,11 +11,19 @@ Status: tested, working, but not production ready.
 - [Install](#install)
 - [Overview](#overview)
   - [Chan](#chan)
-    - [PUT](#put)
-    - [GET](#get)
   - [Conveyor](#conveyor)
   - [Mutex](#mutex)
 - [Chan in detail](#chan-in-detail)
+  - [Chan API](#chan-api)
+    - [Put](#put)
+    - [Put with timeout](#put-with-timeout)
+    - [Get](#get)
+    - [Get with timeout](#get-with-timeout)
+    - [Close, isClosed](#close-isclosed)
+    - [Seal, isSealed](#seal-issealed)
+    - [ForEach](#foreach)
+    - [Misc other information](#misc-other-information)
+  - [Chan Details](#chan-details)
 - [Conveyor in detail](#conveyor-in-detail)
 - [Mutex in detail](#mutex-in-detail)
   - [Return values](#return-values)
@@ -89,11 +97,36 @@ Mutexes can also act as priority queues, prioritizing certain functions.
 
 ---
 
+### Constructor
+
+You set the maximum size of the queue (its "capacity") in the constructor.  This can be any integer >= 0, or `null` for unlimited length.
+
+You also have to tell Typescript what type of object will be passing through the Chan.
+
+```ts
+constructor(capacity: number | null = null);
+```
+
+```ts
+let chanCapacity3 = new Chan<string>(3);
+
+// default capacity is null (unlimited)
+let chanUnlimited = new Chan<string>();
+
+let chanOfNumbersAndNulls = new Chan<number | null>();
+```
+
+### Capacity zero?
+
+When capacity is 0, the queue is not used.  Instead, attempts to `put` and `get` will wait around until there's one of each, and then the item will be handed off directly from one to the other.
+
+This is a good choice if you have a pipeline of several Chans in a row and you don't want any "buffer bloat" of items building up between them.
+
 ### Put
 
 Add an item to the queue.
 
-`await chan.put(item)` waits until the queue has space for an extra item, then adds it and returns.
+`await chan.put(item)` waits until the queue has space for an extra item, then adds it and returns.  If this succeeds and the the promise resolves without error, the item made it into the queue.
 
 This can throw the following exceptions:
 * `ChannelTimeoutError` -- if a timeout is specified (see below) and it happens.
@@ -173,29 +206,205 @@ A sealed Chan cannot be un-sealed again.
 
 ### ForEach
 
+Run a callback function on each item in the Chan.  This is similar to "subscribing" to the items in the Chan.
+
+The call to forEach will block until a stopping condition is met, which is potentially forever.
+
+The stopping conditions are any exception thrown by `get`: a timeout, the channel was closed, or the channel was sealed and ran out of items.
+
+```ts
+async forEach(
+    cb: (item: T) => any | Promise<any>,
+    opts?: { timeout: number | null }
+): Promise<void>;
+```
+
+Examples:
+
+```ts
+await chan.forEach(item => console.log(item));
+
+await chan.forEach(async (item) => {
+    // you can use an async callback here too
+    await sleep(1000);
+    console.log(item);
+});
+
+// timeout options
+await chan.forEach(item => {
+    console.log(item)
+}, { timeout: 100 });
+```
+
+Your callback can be an async function.  The callback will be run in series, one at a time, each call waiting for the previous one to finish.
+
+To understand `timeout`, know that internally this is just doing `await get({ timeout: yourTimeoutSetting })` in a loop.  So for every item that it tries to get, it starts a fresh timeout counter.  Once it has waited that long to get the next item, it will give up and stop the whole loop.
+
+If you set `timeout: 0`, it will give up without waiting when the queue becomes empty.  This is a way to drain the existing items in the queue without waiting for more.
+
+**Error handling**
+
+If your callback throws an error, it will propagate upwards to the `forEach` call.  Hopefully you put the `await forEach` call in a try...catch block.
+
+If the loop gets a Chan error of any kind while trying to `get`, it will swallow that error and just end the loop.
+
+**Stopping a forEach**
+
+There are several ways to stop a `forEach` loop:
+
+* Return `false` from your callback.
+* Throw an error from your callback.
+* Close the channel.  This will work immediately and items waiting in the queue will be discarded.
+* Seal the channel and wait for the loop to finish consuming the existing items.
+* If the `forEach` has a timeout, starve it of new items for that length of time and it will stop.
+
+To stop the loop from the outside, without closing the channel, you could instead provide a variable that the loop watches:
+
+```ts
+// a way to stop a forEach from outside
+
+let loopControl = { keepRunning: true }
+
+// not using "await forEach" in this example, but usually you should
+chan.forEach(item => {
+    console.log(item);
+
+    // returning false will stop the loop
+    return loopControl.keepRunning;
+});
+
+// later, set keepRunning to false, and the loop will end
+setTimeout(() => {
+    loopControl.keepRunning = false;
+}, 1000);
+```
+
 ---
 
 ### Misc other information
 
+These are all read-only properties.
+
+`chan.capacity: number | null`
+-- The max size of the queue.  Null means unlimited size.
+
+`chan.itemsInQueue: number`
+-- Number of items in the queue.
+
+`chan.itemsInQueueAndWaitingPuts: number`
+-- Number of items in the queue plus the number of waiting `put()` attempts that are stuck until there's room in the queue.  If you try to `get` everything, you'll get up to this number of items.  (The waiting puts might be cancelled by a timeout before you `get` them.)
+
+`chan.numWaitingGets: number`
+-- Number of consumers who are stuck waiting to `get` an item from the Chan.
+
+`chan.isIdle: boolean`
+-- The Chan is "idle" when the queue is empty and nobody is waiting to `put` or `get` anything.
+
+`chan.canImmediatelyPut: boolean`
+-- If you try to `put` right now, will you succeed without waiting?  E.g. there's room in the queue, or someone is waiting to `get` something right now, and the Chan is not sealed or closed.
+
+`chan.canImmediatelyGet: boolean`
+-- If you try to `get` right now, will you succeed without waiting?  E.g. there's an item in the queue, or someone is waiting to `put` something right now, and the Chan is not closed.
+
 ---
 
-## Chan Details
-Channels similar to the ones in Go.
+## Chan in depth
 
 A `Chan` is a queue of items.  You add items with `put(item)`, and get them with `get()`.  They come out in the same order they went in.
 
-A `Chan` is meant to be used by two different "threads" (e.g. asynchronous functions) to coordinate sending data between them.
+A Chan is meant to be used by two different "threads" (e.g. asynchronous functions) to coordinate sending data between them.
 
-You decide the length of the internal buffer.
-* If 0, there's no buffer and an attempt to `put(item)` will block until there's a matching `get()` so the item can be handed directly between them.
-* If a number, the buffer will hold that many items.  When it's full, `put(item)` will block until there's room.
-* If `null`, the buffer size is unlimited and `put(item)` will never block.
+### Comparison with streams
+
+Streams are a **declarative** way to structure a flow of items.  They can be hard to understand because you have to know what each stream operator does, but the code is very compact:
+
+```ts
+// hypothetical stream example
+// pretend this is RxJS or something
+let source1 = Stream.from([1,2,3,4,5]);
+let source2 = Stream.from([10,20,30,40,50]);
+let zippedFirstThree = zip(source1, source2).take(3)
+
+// output: [1, 10], [2, 20], [3, 30]
+```
+
+Chans are an **imperative** way to handle a flow of items.  They result in longer code but it can be easier to understand - it's just a bunch of loops.
+
+```ts
+// equivalent example using Chans
+
+// we'll have a pipeline of Chans, and some
+// threads that move things along between them.
+
+let chan1 = new Chan<number>()
+let chan2 = new Chan<number>()
+let zippedChan = new Chan<number>()
+let firstThree = new Chan<number>()
+
+// we'll launch a bunch of "threads" (independently running
+// async functions) to run in parallel.
+
+// thread to fill chan 1
+setTimeout(() => {
+    for (let num of [1,2,3,4,5]) {
+        await chan1.put(num);
+    }
+    chan1.seal();
+}, 0);
+
+// thread to fill chan 2
+setTimeout(() => {
+    for (let num of [10,20,30,40,50]) {
+        await chan2.put(num);
+    }
+    chan2.seal();
+}, 0);
+
+// thread to zip from chan1 and chan2 into zippedChan
+setTimeout(async () => {
+    while (true) {
+        try {
+            // stop when either chan1 or chan2 is sealed and empty
+            let item1 = await chan1.get();
+            let item2 = await chan2.get();
+            await zippedChan.put([item1, item2]);
+        } catch (err) {
+            zippedChan.seal();
+            break;
+        }
+    }
+}, 0);
+
+// thread to take first 3 items from zippedChan
+setTimeout(() => {
+    for (let ii = 0; ii < 3; ii++) {
+        try {
+            let item = await zippedChan.get();
+            await firstThree.put(item);
+        } catch (err) {
+            firstThree.seal();
+            break;
+        }
+    }
+}, 0);
+```
+
+You could build up your own library of helper functions for these operations, but they're pretty easy to write so it's not very necessary.
+
+### More details
+
+You decide the length of the Chan's internal queue.
+* If 0, there's no queue and an attempt to `put(item)` will block until there's a matching `get()` so the item can be handed directly between them.
+* If a number, the queue will hold that many items.  When it's full, `put(item)` will block until there's room.
+* If `null`, the queue size is unlimited and `put(item)` will never block.
 
 `get` and `put` can be given an optional timeout value in milliseconds.  If they wait longer than that, they throw a `ChannelTimeoutError`.
 
-A `Chan` can also be closed.  This clears the buffer of waiting items; any waiting get()s or put()s will fail with a `ChannelIsClosedError`, and any future attempts to get or put will also fail with the same error.  A closed `Chan` can't be opened again.
+A Chan can be **closed**.  This clears the queue of waiting items; any waiting get()s or put()s will fail with a `ChannelIsClosedError`, and any future attempts to get or put will also fail with the same error.  A closed Chan can't be opened again.
 
-Closing a `Chan` is not a good way to signal that a sequence of items is complete because it clears the buffer.  Instead, send a special value such as `null` and handle it throughout your code.
+Closing a Chan is not a good way to signal that a sequence of items is complete because it clears the queue of waiting items.  Instead, you can **seal** the Chan.  This prevents any new items from being added, but lets existing items be pulled.  When the last item is pulled out, the Chan closes itself (at which point it is both sealed and closed).
+
+Another way to signal that a sequence of items is complete is to use a special terminator item, like `null`, and handle it throughout your code.  This is up to you; it's not built into Chan.
 
 See [the examples folder](https://github.com/cinnamon-bun/concurrency-friends/tree/main/src/example) for more demos.
 
@@ -219,11 +428,13 @@ while (true) {
     try {
         // Get existing item or wait for one to appear.
         // If 100ms passes with no items, give up.
-        let item = await chan.get(100);  // 100ms timeout
+        let item = await chan.get({ timeout: 100 });
         console.log(item);
     } catch (err) {
-        // could be a ChannelTimeoutError
-        // or a ChannelIsClosedError.
+        // could be one of...
+        // ChannelTimeoutError
+        // ChannelIsClosedError
+        // ChannelIsSealedError
         break;
     }
 }
@@ -231,8 +442,11 @@ while (true) {
 // Another way to consume items.
 // If a timeout is not provided, this will run forever.
 // With a timeout, it stops when the channel is empty for that long.
-// Also stops if the channel is closed.
-chan.forEach(item => console.log(item), 100);  // 100ms timeout
+// Also stops if the channel is closed, or sealed-and-becomes-empty.
+chan.forEach(
+    item => console.log(item),
+    { timeout: 100 })
+);
 
 // Close a channel permanently.
 // Clears the buffer of items.
