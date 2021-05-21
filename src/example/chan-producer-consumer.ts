@@ -1,4 +1,4 @@
-import { Chan2 } from '../chan2';
+import { Chan } from '../chan';
 import { sleep } from '../util';
 
 // Make a producer "thread" and a consumer "thread".
@@ -6,7 +6,7 @@ import { sleep } from '../util';
 // In this example we make our own channel and hand it to 
 // the functions; they don't have to create any channels.
 
-let producer = async (chan: Chan2<string>) => {
+let producer = async (chan: Chan<string>) => {
     // Put some items into the channel
     for (let ii = 0; ii < 6; ii++) {
         console.log(`producer sending item ${ii}`);
@@ -20,7 +20,7 @@ let producer = async (chan: Chan2<string>) => {
     console.log('producer is stoppping.');
 };
 
-let consumer = async (chan: Chan2<string>) => {
+let consumer = async (chan: Chan<string>) => {
     while (true) {
         let item = await chan.get();
         console.log(`      consumer got ${item}`);
@@ -36,7 +36,7 @@ let consumer = async (chan: Chan2<string>) => {
 };
 
 // make a channel with a queue size of 3
-let chan = new Chan2<string>(3);
+let chan = new Chan<string>(3);
 
 // run the threads simultaneously
 producer(chan);

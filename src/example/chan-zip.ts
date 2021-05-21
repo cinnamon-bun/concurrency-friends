@@ -1,12 +1,12 @@
-import { Chan2 } from '../chan2';
+import { Chan } from '../chan';
 import { sleep } from '../util';
 
 // In this example we use `null` to signal that a channel is done.
 // Also in this example, each function is responsible for creating
 // its own output channel.
 
-let makeItems = (name: string, count: number): Chan2<string | null> => {
-    let outChan = new Chan2<string | null>(2);
+let makeItems = (name: string, count: number): Chan<string | null> => {
+    let outChan = new Chan<string | null>(2);
     setImmediate(async () => {
         // Put some items into the channel
         for (let ii = 0; ii < count; ii++) {
@@ -24,10 +24,10 @@ let makeItems = (name: string, count: number): Chan2<string | null> => {
     return outChan;
 };
 
-let zip = <T>(chan1: Chan2<T | null>, chan2: Chan2<T | null>): Chan2<[T, T] | null> => {
+let zip = <T>(chan1: Chan<T | null>, chan2: Chan<T | null>): Chan<[T, T] | null> => {
     // Given two channels, output a series of pairs of items from each channel.
     // Stop when the shorter channel runs out.
-    let outChan = new Chan2<[T, T] | null>(0);
+    let outChan = new Chan<[T, T] | null>(0);
     setImmediate(async () => {
         while (true) {
             let item1 = await chan1.get();

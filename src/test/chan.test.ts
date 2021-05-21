@@ -1,6 +1,6 @@
 import 'jest';
 
-import { Chan2, Channel2IsClosedError, Channel2IsSealedError, Channel2TimeoutError } from '../chan2';
+import { Chan, ChannelIsClosedError, ChannelIsSealedError, ChannelTimeoutError } from '../chan';
 import { sleep } from '../util';
 
 //process.on('unhandledRejection', (reason : any, p : any) => {
@@ -8,7 +8,7 @@ import { sleep } from '../util';
 //});
 
 test('basic getter methods (isClosed, etc)', async () => {
-    let chanInf = new Chan2<number>();
+    let chanInf = new Chan<number>();
     expect(chanInf.isClosed).toBe(false);
     expect(chanInf.isSealed).toBe(false);
     expect(chanInf.capacity).toBe(null);
@@ -30,7 +30,7 @@ test('basic getter methods (isClosed, etc)', async () => {
     expect(chanInf.canImmediatelyPut).toBe(true);
     expect(chanInf.canImmediatelyGet).toBe(true);
 
-    let chan1 = new Chan2<number>(1);
+    let chan1 = new Chan<number>(1);
     expect(chan1.isClosed).toBe(false);
     expect(chan1.isSealed).toBe(false);
     expect(chan1.capacity).toBe(1);
@@ -51,7 +51,7 @@ test('basic getter methods (isClosed, etc)', async () => {
     expect(chan1.canImmediatelyPut).toBe(false);
     expect(chan1.canImmediatelyGet).toBe(true);
 
-    let chan0 = new Chan2<number>(0);
+    let chan0 = new Chan<number>(0);
     expect(chan0.isClosed).toBe(false);
     expect(chan0.isSealed).toBe(false);
     expect(chan0.capacity).toBe(0);
@@ -65,7 +65,7 @@ test('basic getter methods (isClosed, etc)', async () => {
 
 describe('capacity = 0, blocked gets', () => {
     test('capacity = 0, blocked get with timeout:0 that expires immediately', async () => {
-        let chan0 = new Chan2<number>(0);
+        let chan0 = new Chan<number>(0);
 
         expect(chan0.isIdle).toBe(true);
         expect(chan0.numWaitingGets).toBe(0);
@@ -84,7 +84,7 @@ describe('capacity = 0, blocked gets', () => {
             await waitingGet;
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2TimeoutError).toBe(true);
+            expect(err instanceof ChannelTimeoutError).toBe(true);
         }
 
         expect(chan0.isIdle).toBe(true);
@@ -94,7 +94,7 @@ describe('capacity = 0, blocked gets', () => {
     });
 
     test('capacity = 0, blocked get with timeout:50 that expires', async () => {
-        let chan0 = new Chan2<number>(0);
+        let chan0 = new Chan<number>(0);
 
         expect(chan0.isIdle).toBe(true);
         expect(chan0.numWaitingGets).toBe(0);
@@ -113,7 +113,7 @@ describe('capacity = 0, blocked gets', () => {
             await waitingGet;
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2TimeoutError).toBe(true);
+            expect(err instanceof ChannelTimeoutError).toBe(true);
         }
 
         expect(chan0.isIdle).toBe(true);
@@ -123,7 +123,7 @@ describe('capacity = 0, blocked gets', () => {
     });
 
     test('capacity = 0, blocked get with timeout:50, then resolved before it expires', async () => {
-        let chan0 = new Chan2<number>(0);
+        let chan0 = new Chan<number>(0);
 
         expect(chan0.isIdle).toBe(true);
         expect(chan0.numWaitingGets).toBe(0);
@@ -154,7 +154,7 @@ describe('capacity = 0, blocked gets', () => {
     });
 
     test('capacity = 0, blocked get with timeout:null, then resolved', async () => {
-        let chan0 = new Chan2<number>(0);
+        let chan0 = new Chan<number>(0);
 
         expect(chan0.isIdle).toBe(true);
         expect(chan0.numWaitingGets).toBe(0);
@@ -185,7 +185,7 @@ describe('capacity = 0, blocked gets', () => {
     });
 
     test('capacity = 0, blocked get with no timeout set at all, then resolved', async () => {
-        let chan0 = new Chan2<number>(0);
+        let chan0 = new Chan<number>(0);
 
         expect(chan0.isIdle).toBe(true);
         expect(chan0.numWaitingGets).toBe(0);
@@ -216,24 +216,9 @@ describe('capacity = 0, blocked gets', () => {
     });
 });
 
-
-/*
-test('canGet and canPut with blocked write, capacity=0', async () => {
-    let chan = new Chan2<number>(0);
-    expect(chan.canPutWithoutBlocking).toBe(false);
-    expect(chan.canGetWithoutBlocking).toBe(false);
-    let p = chan.put(1, 50)
-        .then(() => expect(true).toBe(false))
-        .catch(e => expect('' + e).toBe('ChannelTimeoutError: put() timed out'));
-    expect(chan.canPutWithoutBlocking).toBe(false);
-    expect(chan.canGetWithoutBlocking).toBe(true);
-    await p;
-});
-*/
-
 describe('first in, first out', () => {
     test('first in, first out, put all then get all', async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
         await chanInf.put(1);
         await chanInf.put(2);
         await chanInf.put(3);
@@ -243,7 +228,7 @@ describe('first in, first out', () => {
     });
 
     test('first in, first out, intermixed', async () => {
-        let chan = new Chan2<number>();
+        let chan = new Chan<number>();
         await chan.put(1);
         await chan.put(2);
         expect(await chan.get()).toBe(1);
@@ -256,7 +241,7 @@ describe('first in, first out', () => {
 describe('timeout on get', () => {
     for (let TIMEOUT of [0, 10]) {
         test(`successful get, then expired get.  timeout=${TIMEOUT}, capacity=infinite`, async () => {
-            let chan = new Chan2<number>();
+            let chan = new Chan<number>();
             await chan.put(1);
             expect(chan.isIdle).toBeFalsy();
             expect(await chan.get()).toBe(1);
@@ -266,7 +251,7 @@ describe('timeout on get', () => {
                 await chan.get({ timeout: TIMEOUT })
                 expect('should have thrown an error').toBe(true);
             } catch (err) {
-                expect(err instanceof Channel2TimeoutError).toBeTruthy();
+                expect(err instanceof ChannelTimeoutError).toBeTruthy();
             }
             expect(chan.isIdle).toBeTruthy();
         });
@@ -274,12 +259,12 @@ describe('timeout on get', () => {
 
     for (let TIMEOUT of [0, 10]) {
         test(`expired get, then successful get.  timeout=${TIMEOUT}, capacity=infinite`, async () => {
-            let chan = new Chan2<number>();
+            let chan = new Chan<number>();
             try {
                 await chan.get({ timeout: TIMEOUT })
                 expect('should have thrown an error').toBe(true);
             } catch (err) {
-                expect(err instanceof Channel2TimeoutError).toBeTruthy();
+                expect(err instanceof ChannelTimeoutError).toBeTruthy();
             }
             expect(chan.isIdle).toBeTruthy();
             await chan.put(1);
@@ -297,7 +282,7 @@ describe('timeout on put', () => {
     for (let TIMEOUT of [0, 10]) {
         for (let CAPACITY of [0, 1, 5]) {
             test(`put to fill queue, then put again with timeout.  timeout=${TIMEOUT}, capacity=${CAPACITY}`, async () => {
-                let chan = new Chan2<number>(CAPACITY);
+                let chan = new Chan<number>(CAPACITY);
                 // fill the queue
                 for (let ii = 0; ii < CAPACITY; ii++) {
                     await chan.put(ii);
@@ -307,7 +292,7 @@ describe('timeout on put', () => {
                     await chan.put(999, { timeout: TIMEOUT })
                     expect('should have thrown an error').toBe(true);
                 } catch (err) {
-                    expect(err instanceof Channel2TimeoutError).toBeTruthy();
+                    expect(err instanceof ChannelTimeoutError).toBeTruthy();
                 }
             });
         }
@@ -318,7 +303,7 @@ describe('timeout on put, then timeout on get', () => {
     for (let TIMEOUT of [0, 10]) {
         for (let CAPACITY of [0, 1, 5]) {
             test(`fill queue, put timeout, drain queue, read timeout.  timeout=${TIMEOUT}, capacity=${CAPACITY}`, async () => {
-                let chan = new Chan2<number>(CAPACITY);
+                let chan = new Chan<number>(CAPACITY);
                 // fill the queue
                 for (let ii = 0; ii < CAPACITY; ii++) {
                     await chan.put(ii);
@@ -328,7 +313,7 @@ describe('timeout on put, then timeout on get', () => {
                     await chan.put(999, { timeout: TIMEOUT })
                     expect('should have thrown an error').toBe(true);
                 } catch (err) {
-                    expect(err instanceof Channel2TimeoutError).toBeTruthy();
+                    expect(err instanceof ChannelTimeoutError).toBeTruthy();
                 }
                 // drain the queue
                 for (let ii = 0; ii < CAPACITY; ii++) {
@@ -339,7 +324,7 @@ describe('timeout on put, then timeout on get', () => {
                     await chan.get({ timeout: TIMEOUT })
                     expect('should have thrown an error').toBe(true);
                 } catch (err) {
-                    expect(err instanceof Channel2TimeoutError).toBeTruthy();
+                    expect(err instanceof ChannelTimeoutError).toBeTruthy();
                 }
             });
         }
@@ -348,7 +333,7 @@ describe('timeout on put, then timeout on get', () => {
 
 describe('capacity zero', () => {
     test(`capacity=0`, async () => {
-        let chan0 = new Chan2<number>(0);
+        let chan0 = new Chan<number>(0);
         expect(chan0.canImmediatelyPut).toBe(false);
         expect(chan0.canImmediatelyGet).toBe(false);
         expect(chan0.isIdle).toBe(true);
@@ -376,7 +361,7 @@ describe('capacity zero', () => {
 describe('two threads', () => {
     for (let CAPACITY of [0, 1, 2, 3, 4, 1000, undefined]) {
         test(`two threads.  capacity=${CAPACITY}`, async () => {
-            let chan = new Chan2<number>(CAPACITY);
+            let chan = new Chan<number>(CAPACITY);
             let thread1 = new Promise<void>(async (resolve, reject) => {
                 await chan.put(1);
                 await chan.put(2);
@@ -400,7 +385,7 @@ describe('two threads', () => {
     for (let CAPACITY of [0, 1, 2, 4, 1000, undefined]) {
         test(`two threads timing fuzz test.  capacity=${CAPACITY}`, async () => {
             let n = 30;
-            let chan = new Chan2<number>(CAPACITY);
+            let chan = new Chan<number>(CAPACITY);
             // put N items with random timing
             let thread1 = new Promise<void>(async (resolve, reject) => {
                 for (let ii = 0; ii < n; ii++) {
@@ -425,7 +410,7 @@ describe('two threads', () => {
                     await chan.get({ timeout: 0 })
                     expect('should have thrown an error').toBe(true);
                 } catch (err) {
-                    expect(err instanceof Channel2TimeoutError).toBeTruthy();
+                    expect(err instanceof ChannelTimeoutError).toBeTruthy();
                 }
                 resolve();
             });
@@ -436,7 +421,7 @@ describe('two threads', () => {
 
 describe('seal', () => {
     test(`seal when idle`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
 
         expect(chanInf.isSealed).toBe(false);
         expect(chanInf.isClosed).toBe(false);
@@ -458,7 +443,7 @@ describe('seal', () => {
             expect('should have thrown an error').toBe(true);
         } catch (err) {
             // Closed error wins over Sealed error, if it's both sealed and closed
-            expect(err instanceof Channel2IsSealedError).toBeTruthy();
+            expect(err instanceof ChannelIsSealedError).toBeTruthy();
         }
         
         // can't get another one
@@ -466,12 +451,12 @@ describe('seal', () => {
             await chanInf.get({ timeout: 20 })
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsSealedError).toBeTruthy();
+            expect(err instanceof ChannelIsSealedError).toBeTruthy();
         }
     });
 
     test(`close then seal`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
 
         expect(chanInf.isSealed).toBe(false);
         expect(chanInf.isClosed).toBe(false);
@@ -499,7 +484,7 @@ describe('seal', () => {
     });
 
     test(`seal then close`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
 
         // load it up
         await chanInf.put(1);
@@ -518,7 +503,7 @@ describe('seal', () => {
     });
 
     test(`seal when queue has some items`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
 
         // load it up
         await chanInf.put(1);
@@ -535,7 +520,7 @@ describe('seal', () => {
             await chanInf.put(999, { timeout: 20 })
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsSealedError).toBeTruthy();
+            expect(err instanceof ChannelIsSealedError).toBeTruthy();
         }
 
         // drain it...
@@ -555,12 +540,12 @@ describe('seal', () => {
             await chanInf.get({ timeout: 20 })
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsSealedError).toBeTruthy();
+            expect(err instanceof ChannelIsSealedError).toBeTruthy();
         }
     });
 
     test(`seal with waiting puts`, async () => {
-        let chanInf = new Chan2<number>(1);
+        let chanInf = new Chan<number>(1);
 
         // load it up
         await chanInf.put(1);
@@ -581,12 +566,12 @@ describe('seal', () => {
             await waitingPut;
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsSealedError).toBeTruthy();
+            expect(err instanceof ChannelIsSealedError).toBeTruthy();
         }
     });
 
     test(`seal with waiting gets`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
 
         let waitingGet = chanInf.get({ timeout: 30 });
         expect(chanInf.isIdle).toBe(false);
@@ -601,7 +586,7 @@ describe('seal', () => {
             await waitingGet;
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsSealedError).toBeTruthy();
+            expect(err instanceof ChannelIsSealedError).toBeTruthy();
         }
     });
 });
@@ -609,7 +594,7 @@ describe('seal', () => {
 describe('seal with two threads', () => {
     for (let CAPACITY of [0, 1, 2, 3, 4, 1000, undefined]) {
         test(`two threads.  capacity=${CAPACITY}`, async () => {
-            let chan = new Chan2<number>(CAPACITY);
+            let chan = new Chan<number>(CAPACITY);
             let thread1 = new Promise<void>(async (resolve, reject) => {
                 await chan.put(1);
                 await chan.put(2);
@@ -624,7 +609,7 @@ describe('seal with two threads', () => {
                     await chan.put(999);
                     expect('should have thrown an error').toBe(true);
                 } catch (err) {
-                    expect(err instanceof Channel2IsSealedError).toBeTruthy();
+                    expect(err instanceof ChannelIsSealedError).toBeTruthy();
                 }
                 resolve();
             });
@@ -648,7 +633,7 @@ describe('seal with two threads', () => {
                     await chan.get({ timeout: 100 });
                     expect('should have thrown an error').toBe(true);
                 } catch (err) {
-                    expect(err instanceof Channel2IsSealedError).toBe(true);
+                    expect(err instanceof ChannelIsSealedError).toBe(true);
                 }
                 // it should definitely be sealed and empty now, so it should have been closed
                 expect(chan.itemsInQueue).toBe(0);
@@ -668,7 +653,7 @@ describe('seal with two threads', () => {
 
 describe('close', () => {
     test(`close when idle`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
 
         expect(chanInf.isSealed).toBe(false);
         expect(chanInf.isClosed).toBe(false);
@@ -690,7 +675,7 @@ describe('close', () => {
             expect('should have thrown an error').toBe(true);
         } catch (err) {
             // Closed error wins over Sealed error, if it's both sealed and closed
-            expect(err instanceof Channel2IsClosedError).toBeTruthy();
+            expect(err instanceof ChannelIsClosedError).toBeTruthy();
         }
         
         // can't get another one
@@ -698,12 +683,12 @@ describe('close', () => {
             await chanInf.get({ timeout: 20 })
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsClosedError).toBeTruthy();
+            expect(err instanceof ChannelIsClosedError).toBeTruthy();
         }
     });
 
     test(`close when queue has some items`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
 
         // load it up
         await chanInf.put(1);
@@ -722,7 +707,7 @@ describe('close', () => {
             await chanInf.put(999, { timeout: 20 })
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsClosedError).toBeTruthy();
+            expect(err instanceof ChannelIsClosedError).toBeTruthy();
         }
 
         // can't get another one
@@ -730,12 +715,12 @@ describe('close', () => {
             await chanInf.get({ timeout: 20 })
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsClosedError).toBeTruthy();
+            expect(err instanceof ChannelIsClosedError).toBeTruthy();
         }
     });
 
     test(`close with waiting puts`, async () => {
-        let chanInf = new Chan2<number>(1);
+        let chanInf = new Chan<number>(1);
 
         expect(chanInf.canImmediatelyPut).toBe(true);
         expect(chanInf.canImmediatelyGet).toBe(false);
@@ -763,12 +748,12 @@ describe('close', () => {
             await waitingPut;
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsClosedError).toBeTruthy();
+            expect(err instanceof ChannelIsClosedError).toBeTruthy();
         }
     });
 
     test(`close with waiting gets`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
 
         let waitingGet = chanInf.get({ timeout: 30 });
         expect(chanInf.isIdle).toBe(false);
@@ -783,7 +768,7 @@ describe('close', () => {
             await waitingGet;
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err instanceof Channel2IsClosedError).toBeTruthy();
+            expect(err instanceof ChannelIsClosedError).toBeTruthy();
         }
     });
 });
@@ -791,7 +776,7 @@ describe('close', () => {
 describe(`forEach`, () => {
     for (let CAPACITY of [0, 1, 2, 3, 4, 1000, null]) {
         test(`forEach with no timeout, then stop when channel is closed.  capacity=${CAPACITY}`, async () => {
-            let chan = new Chan2<number>(CAPACITY);
+            let chan = new Chan<number>(CAPACITY);
             let thread1 = new Promise<void>(async (resolve, reject) => {
                 await chan.put(1);
                 await chan.put(2);
@@ -817,7 +802,7 @@ describe(`forEach`, () => {
 
     for (let CAPACITY of [0, 1, 2, 3, 4, 1000, null]) {
         test(`forEach with no timeout, then stop when channel is sealed and drained.  capacity=${CAPACITY}`, async () => {
-            let chan0 = new Chan2<number>(0);
+            let chan0 = new Chan<number>(0);
             let thread1 = new Promise<void>(async (resolve, reject) => {
                 await chan0.put(1);
                 await chan0.put(2);
@@ -842,7 +827,7 @@ describe(`forEach`, () => {
 
     for (let CAPACITY of [0, 1, 2, 3, 4, 1000, null]) {
         test(`forEach stopping because of timeout:30.  capacity=${CAPACITY}`, async () => {
-            let chan = new Chan2<number>(CAPACITY);
+            let chan = new Chan<number>(CAPACITY);
             let thread1 = new Promise<void>(async (resolve, reject) => {
                 await sleep(10);
                 await chan.put(1);
@@ -856,7 +841,7 @@ describe(`forEach`, () => {
                         await chan.put(4, { timeout: 60 });  // this will time out when forEach has stopped
                         expect('should have thrown an error').toBe(true);
                     } catch (err) {
-                        expect(err instanceof Channel2TimeoutError).toBe(true);
+                        expect(err instanceof ChannelTimeoutError).toBe(true);
                     }
                 } else {
                     await chan.put(4);  // there's room to put one after forEach stopps
@@ -876,7 +861,7 @@ describe(`forEach`, () => {
     }
 
     test(`forEach stopping because of timeout:0.  capacity=null`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
         let thread1 = new Promise<void>(async (resolve, reject) => {
             await chanInf.put(1);
             await chanInf.put(2);
@@ -900,7 +885,7 @@ describe(`forEach`, () => {
     });
 
     test(`forEach with error in callback`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
         await chanInf.put(1);
         await chanInf.put(2);
         await chanInf.put(3);
@@ -921,7 +906,7 @@ describe(`forEach`, () => {
     });
 
     test(`forEach with async callback`, async () => {
-        let chanInf = new Chan2<number>();
+        let chanInf = new Chan<number>();
         await chanInf.put(1);
         await chanInf.put(2);
         await chanInf.put(3);

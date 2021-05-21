@@ -24,21 +24,21 @@ let J = (x: any) => JSON.stringify(x);
 let log = (msg?: any, val?: any) => { };
 //let log = console.log;
 
-export class Channel2TimeoutError extends Error {
+export class ChannelTimeoutError extends Error {
     constructor(message?: string) {
         /* istanbul ignore next */
         super(message || '');
         this.name = 'ChannelTimeoutError';
     }
 }
-export class Channel2IsClosedError extends Error {
+export class ChannelIsClosedError extends Error {
     constructor(message?: string) {
         /* istanbul ignore next */
         super(message || '');
         this.name = 'ChannelIsClosedError';
     }
 }
-export class Channel2IsSealedError extends Error {
+export class ChannelIsSealedError extends Error {
     constructor(message?: string) {
         /* istanbul ignore next */
         super(message || '');
@@ -46,7 +46,7 @@ export class Channel2IsSealedError extends Error {
     }
 }
 
-export class Chan2<T> {
+export class Chan<T> {
     _queue: T[] = [];
     _capacity: number | null;
     _isClosed: boolean = false;
@@ -83,14 +83,14 @@ export class Chan2<T> {
         // reject waiting gets
         log(`...reject waiting gets`);
         for (let waitingGet of this._waitingGets) {
-            waitingGet.reject(new Channel2IsClosedError('waiting get is cancelled because channel was closed'));
+            waitingGet.reject(new ChannelIsClosedError('waiting get is cancelled because channel was closed'));
         }
         this._waitingGets = [];
 
         // reject waiting puts
         log(`...reject waiting puts`);
         for (let waitingPut of this._waitingPuts) {
-            waitingPut.deferred.reject(new Channel2IsClosedError('waiting put is cancelled because channel was closed'));
+            waitingPut.deferred.reject(new ChannelIsClosedError('waiting put is cancelled because channel was closed'));
         }
         this._waitingPuts = [];
 
@@ -123,14 +123,14 @@ export class Chan2<T> {
         // reject waiting gets
         log(`...reject waiting gets`);
         for (let waitingGet of this._waitingGets) {
-            waitingGet.reject(new Channel2IsSealedError('waiting get is cancelled because channel was sealed'));
+            waitingGet.reject(new ChannelIsSealedError('waiting get is cancelled because channel was sealed'));
         }
         this._waitingGets = [];
 
         // reject waiting puts
         log(`...reject waiting puts`);
         for (let waitingPut of this._waitingPuts) {
-            waitingPut.deferred.reject(new Channel2IsSealedError('waiting put is cancelled because channel was sealed'));
+            waitingPut.deferred.reject(new ChannelIsSealedError('waiting put is cancelled because channel was sealed'));
         }
         this._waitingPuts = [];
 
@@ -198,8 +198,8 @@ export class Chan2<T> {
         log(`put(${J(item)}, ${J(opts)})...`);
 
         // sealed error takes precendence
-        if (this._isSealed) { throw new Channel2IsSealedError('cannot put() to a sealed channel'); }
-        if (this._isClosed) { throw new Channel2IsClosedError('cannot put() to a closed channel'); }
+        if (this._isSealed) { throw new ChannelIsSealedError('cannot put() to a sealed channel'); }
+        if (this._isClosed) { throw new ChannelIsClosedError('cannot put() to a closed channel'); }
 
         let queueHasSpace = this._capacity === null || (this._queue.length < this._capacity);
 
@@ -228,7 +228,7 @@ export class Chan2<T> {
         if (timeout === 0) {
             log(`...put: C3. queue is full and timeout is zero, so throw timeout error right away`);
             log(`...put is done.`);
-            throw new Channel2TimeoutError('queue is full and timeout is zero');
+            throw new ChannelTimeoutError('queue is full and timeout is zero');
         }
 
         // C3. enqueue as a waitingPut
@@ -247,7 +247,7 @@ export class Chan2<T> {
                 //  waitingPut succeeds.
                 log(`...put: C3t. timeout timer has fired after ${timeout} ms`);
                 this._waitingPuts = this._waitingPuts.filter(d => d !== waitingPut);
-                putDeferred.reject(new Channel2TimeoutError('timeout occurred'));
+                putDeferred.reject(new ChannelTimeoutError('timeout occurred'));
             }, timeout);
             // If the waitingPut is resolved later, cancel the timer.
             putDeferred.promise
@@ -274,9 +274,9 @@ export class Chan2<T> {
         if (this._isClosed) {
             // sealed error takes precedence
             if (this._isSealed) {
-                throw new Channel2IsSealedError('cannot get() from a sealed channel');
+                throw new ChannelIsSealedError('cannot get() from a sealed channel');
             } else {
-                throw new Channel2IsClosedError('cannot get() from a closed channel');
+                throw new ChannelIsClosedError('cannot get() from a closed channel');
             }
         }
 
@@ -313,7 +313,7 @@ export class Chan2<T> {
         if (timeout === 0) {
             log(`...get: C2. nothing to get and timeout is zero, so throw timeout error right away`);
             log(`...get is done.`);
-            throw new Channel2TimeoutError('nothing to get and timeout is zero');
+            throw new ChannelTimeoutError('nothing to get and timeout is zero');
         }
 
         // C3. make a waiting get
@@ -330,7 +330,7 @@ export class Chan2<T> {
                 //  waitingGet succeeds.
                 log(`...get: C3t. timeout timer has fired after ${timeout} ms`);
                 this._waitingGets = this._waitingGets.filter(d => d !== getDeferred);
-                getDeferred.reject(new Channel2TimeoutError('timeout occurred'));
+                getDeferred.reject(new ChannelTimeoutError('timeout occurred'));
             }, timeout);
             // If the waitingGet is resolved later, cancel the timer.
             getDeferred.promise
@@ -359,10 +359,10 @@ export class Chan2<T> {
             try {
                 item = await this.get(opts);
             } catch (err) {
-                if (err instanceof Channel2IsClosedError) { return; }
-                if (err instanceof Channel2IsSealedError) { return; }
+                if (err instanceof ChannelIsClosedError) { return; }
+                if (err instanceof ChannelIsSealedError) { return; }
                 /* istanbul ignore else */
-                if (err instanceof Channel2TimeoutError) { return; }
+                if (err instanceof ChannelTimeoutError) { return; }
                 /* istanbul ignore next */
                 throw err;  // should never get here
             }
