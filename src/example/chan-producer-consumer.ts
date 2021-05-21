@@ -1,4 +1,4 @@
-import { Chan } from '../chan';
+import { Chan, ChannelIsSealedError } from '../chan';
 import { sleep } from '../util';
 
 // Make a producer "thread" and a consumer "thread".
@@ -12,27 +12,23 @@ let producer = async (chan: Chan<string>) => {
         console.log(`producer sending item ${ii}`);
         await chan.put('item ' + ii);
     }
-    // Put "done" to signal completion
-    // (We shouldn't close the channel to signal completion,
-    // because that would delete any items still in the queue.)
-    console.log('producer sending "done"');
-    await chan.put('done');
-    console.log('producer is stoppping.');
+    console.log('sealing producer to signal there is no more data');
+    chan.seal();
+    console.log('producer is done.');
 };
 
 let consumer = async (chan: Chan<string>) => {
     while (true) {
-        let item = await chan.get();
-        console.log(`      consumer got ${item}`);
-        if (item === 'done') {
-            // stop when we get "done"
-            break;
-        } else {
-            // otherwise do something slow to the item
+        try {
+            let item = await chan.get();
+            console.log(`      consumer got ${item}`);
             await sleep(100);
+        } catch (err) {
+            if (err instanceof ChannelIsSealedError) { break; }
+            throw err;
         }
     }
-    console.log('      consumer is stopping.');
+    console.log('      consumer is done.');
 };
 
 // make a channel with a queue size of 3
@@ -56,9 +52,8 @@ producer sending item 4
       consumer got item 3
       consumer got item 4
 producer sending item 5
-producer sending "done"
-producer is stoppping.
+sealing producer to signal there is no more data
+producer is done.
       consumer got item 5
-      consumer got done
-      consumer is stopping.
+      consumer is done.
 */
