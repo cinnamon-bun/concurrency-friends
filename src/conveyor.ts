@@ -14,7 +14,7 @@ It's many-to-one:
 Anyone can put items in (fan-in), but only one function processes the data (no fan-out).
 
 Pushing items into the queue is an instant synchronous operation which never blocks.
-The queue items will be processed in the next tick or later.
+When pushed, and item won't be processed until queueMicrotask runs, or later.
 
 The queue length is unlimited.
 
@@ -62,7 +62,7 @@ export class Conveyor<T, R> {
         let deferred = makeDeferred<R>();  // this will resolve when the item is done being handled
         this._queue.push({ item, deferred });
 
-        // if this is a priority queue, sort the items after pushing the new one
+        // if this is a priority queue, keep the queue sorted after pushing
         if (this._sortKeyFn !== null) {
             stable.inplace(this._queue, (a: QueueItem<T, R>, b: QueueItem<T, R>): number => {
                 // istanbul ignore next

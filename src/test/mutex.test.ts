@@ -1,10 +1,10 @@
 import 'jest';
 
-import { Mutex, PriorityMutex } from '../mutex';
+import { Lock, PriorityLock } from '../mutex';
 import { sleep } from '../util';
 
 test('return value', async () => {
-    let mutex = new Mutex<number>();
+    let mutex = new Lock<number>();
     let result = await mutex.run(async (): Promise<number> => {
         return 123;
     });
@@ -12,7 +12,7 @@ test('return value', async () => {
 });
 
 test('error in sync function', async () => {
-    let mutex = new Mutex<number>();
+    let mutex = new Lock<number>();
     try {
         await mutex.run((): number => {
             throw new Error('oops');
@@ -24,7 +24,7 @@ test('error in sync function', async () => {
 });
 
 test('error in async function', async () => {
-    let mutex = new Mutex<number>();
+    let mutex = new Lock<number>();
     try {
         await mutex.run(async (): Promise<number> => {
             throw new Error('oops');
@@ -51,7 +51,7 @@ test('basics', async () => {
         expect(globalId).toEqual(thisId);
     };
 
-    let mutex = new Mutex<void>();
+    let mutex = new Lock<void>();
     mutex.run(myFn);
     mutex.run(myFn);
     await mutex.run(myFn);
@@ -63,7 +63,7 @@ test('basics', async () => {
 
 test('should run in order - sync', async () => {
     let array: number[] = [];
-    let mutex = new Mutex<any>();
+    let mutex = new Lock<any>();
     mutex.run(() => array.push(0));
     mutex.run(() => array.push(1));
     await mutex.run(() => array.push(2));
@@ -83,7 +83,7 @@ test('should run in order - async', async () => {
             array.push(n);
         };
     };
-    let mutex = new Mutex<void>();
+    let mutex = new Lock<void>();
     mutex.run(makePushFn(0, 20));
     mutex.run(makePushFn(1, 8));
     await mutex.run(makePushFn(2, 4));
@@ -103,7 +103,7 @@ test('priority mutex but with regular mutex', async () => {
             array.push(n);
         };
     };
-    let mutex = new Mutex<void>();
+    let mutex = new Lock<void>();
     mutex.run(makePushFn(0, 50));
     mutex.run(makePushFn(3, 50));
     mutex.run(makePushFn(1, 50));
@@ -124,7 +124,7 @@ test('priority mutex', async () => {
             array.push(n);
         };
     };
-    let mutex = new PriorityMutex<void>();
+    let mutex = new PriorityLock<void>();
     mutex.run(0, makePushFn(0, 50));
     mutex.run(3, makePushFn(3, 50));
     mutex.run(1, makePushFn(1, 50));
