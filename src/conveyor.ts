@@ -4,17 +4,17 @@ A queue of items which are consumed by a single provided handler function,
 one item at a time.
 
 Users put items into the queue.  They are run one at a time through the handler,
-using `await cb(x)` to make sure only one copy of the handler runs at a time.
+using `await cb(x)` to make sure only one copy of the handler function runs at a time.
 The handler can be an async function (returning a promise) or a sync function.
 
 If you await conveyor.push(x), you will continue after the handler has finished
-running on x.
+running on x.  The await will return the return value of the handler function.
 
 It's many-to-one:
 Anyone can put items in (fan-in), but only one function processes the data (no fan-out).
 
 Pushing items into the queue is an instant synchronous operation which never blocks.
-The queue items will be processed in the next tick.
+The queue items will be processed in the next tick or later.
 
 The queue length is unlimited.
 
@@ -25,32 +25,31 @@ will be sorted according to sortKeyFn(item), lowest first, while waiting in the 
 
 import stable = require('stable');  // stable array sort
 
-// T: input type of the handler function
-// R: return type of the handler
+import { Deferred, makeDeferred } from './deferred';
 
-export type ConveyorCb<T, R> = (item: T) => R | Promise<R>;
+// T: type of the items in the queue (input of the handler function)
+// R: return type of the handler function
+
+export type ConveyorHandlerFn<T, R> = (item: T) => R | Promise<R>;
 export type ConveyorSortKeyFn<T> = (item: T) => any;
-
-type QueueItem<T, R> = [T, (x: R) => void, (err: any) => void];  // [item, resolve, reject]
-type Thunk = () => void;
+type QueueItem<T, R> = {item: T, deferred: Deferred<R> }
 
 export class Conveyor<T, R> {
-    _queue: QueueItem<T, R>[] = [];  // item, resolve, reject
-    _handler: ConveyorCb<T, R>;
+    _queue: QueueItem<T, R>[] = [];
+    _threadIsRunning: boolean = false;
+    _handlerFn: ConveyorHandlerFn<T, R>;
     _sortKeyFn: ConveyorSortKeyFn<T> | null;
-    _wakeUpThread: Thunk | null = null;  // this is a promise resolve fn to let the thread continue running
 
-    constructor(handler: ConveyorCb<T, R>, sortKeyFn?: ConveyorSortKeyFn<T>) {
+    constructor(handler: ConveyorHandlerFn<T, R>, sortKeyFn?: ConveyorSortKeyFn<T>) {
         // Create a new Conveyor with a sync or async handler function.
-        // The handler should accept one item at a time, or undefined (when the conveyor becomes idle).
-        // If sortKeyFn is provided, this is a priority queue.
-        // sortKeyFn takes a single item and returns the value used to sort it.
+        // If sortKeyFn is provided, this is a priority queue style Conveyor.
+        //  sortKeyFn takes a single item and returns the value used to sort it.
 
-        this._handler = handler;
+        this._handlerFn = handler;
         this._sortKeyFn = sortKeyFn || null;
 
-        // start the processing thread
-        setImmediate(this._thread.bind(this));
+        // wake up the thread
+        queueMicrotask(this._thread.bind(this));
     }
 
     async push(item: T): Promise<R> {
@@ -59,56 +58,60 @@ export class Conveyor<T, R> {
         // this promise will resolve with the return value of the handler,
         // or with an exception thrown by the handler.
 
-        // make a promise that we can resolve later, and enqueue the item
-        let prom = new Promise<R>((resolve, reject) => {
-            let queueItem: QueueItem<T, R> = [item, resolve, reject];
-            this._queue.push(queueItem);
-            // if this is a priority queue, sort the items after pushing the new one
-            if (this._sortKeyFn !== null) {
-                stable.inplace(this._queue, (a: QueueItem<T, R>, b: QueueItem<T, R>): number => {
-                    // istanbul ignore next
-                    if (this._sortKeyFn === null) { return 0; }
-                    let val1 = this._sortKeyFn(a[0]);
-                    let val2 = this._sortKeyFn(b[0]);
-                    if (val1 > val2) { return 1; }
-                    if (val1 < val2) { return -1; }
-                    return 0;
-                });
-            }
-        });
+        // push item into the queue
+        let deferred = makeDeferred<R>();  // this will resolve when the item is done being handled
+        this._queue.push({ item, deferred });
 
-        // wake up the thread if needed
-        if (this._wakeUpThread) {
-            this._wakeUpThread();
-            this._wakeUpThread = null;
+        // if this is a priority queue, sort the items after pushing the new one
+        if (this._sortKeyFn !== null) {
+            stable.inplace(this._queue, (a: QueueItem<T, R>, b: QueueItem<T, R>): number => {
+                // istanbul ignore next
+                if (this._sortKeyFn === null) { return 0; }
+                let val1 = this._sortKeyFn(a.item);
+                let val2 = this._sortKeyFn(b.item);
+                if (val1 > val2) { return 1; }
+                if (val1 < val2) { return -1; }
+                return 0;
+            });
         }
 
-        return prom;
+        // wake up the thread
+        queueMicrotask(this._thread.bind(this));
+
+        return deferred.promise;
     }
 
     async _thread(): Promise<void> {
+        // don't run a second copy of the thread
+        if (this._threadIsRunning) { return; }
+        this._threadIsRunning = true;
+
         while (true) {
-            if (this._queue.length > 0) {
-                // if there are things in the queue, process them
-                let [item, resolve, reject] = this._queue.shift() as QueueItem<T, R>;
-                try {
-                    // actually run the handler
-                    let result = await this._handler(item);
-                    resolve(result);  // release whoever gave us this item
-                } catch (err) {
-                    reject(err);  // hand the error back to whoever gave us this item
-                }
+            if (this._queue.length === 0) {
+                // queue is empty; stop thread
+                this._threadIsRunning = false;
+                return;
             } else {
-                // nothing in the queue, so go to sleep by awaiting a promise that
-                // we'll resolve later when a push happens.
-                await new Promise((resolve, reject) => {
-                    this._wakeUpThread = resolve as Thunk;
-                });
+                // process next item in queue.
+                let { item, deferred } = this._queue.shift() as QueueItem<T, R>;
+                try {
+                    // run the handler function on the item...
+                    let result = this._handlerFn(item);
+                    if (result instanceof Promise) {
+                        result = await result;
+                    }
+                    // then resolve or reject the promise for whoever added this item to the queue
+                    deferred.resolve(result);
+                } catch (err) {
+                    deferred.reject(err);
+                }
             }
         }
     }
+
 }
 
 // TODO:
-//     allow the handler to return false to close the conveyor
-//     add close() and closed
+//     allow the handler to return false to close the conveyor?
+//     add close() and closed?
+//     send some message to the handler when the queue becomes idle, maybe undefined?

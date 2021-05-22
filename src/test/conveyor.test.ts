@@ -3,14 +3,25 @@ import 'jest';
 import { Conveyor } from '../conveyor';
 import { sleep } from '../util';
 
-test('return value', async () => {
+test('return value, sync', async () => {
+    let double = (x: number): number => {
+        return x * 2;
+    };
+    let conveyor = new Conveyor<number, number>(double);
+    for (let ii = 0; ii < 10; ii++) {
+        let doubled = await conveyor.push(ii);
+        expect(doubled).toEqual(ii * 2);
+    }
+});
+
+test('return value, async', async () => {
     let double = async (x: number): Promise<number> => {
         await sleep(Math.random() * 30);
         return x * 2;
     };
-    let syncConveyor = new Conveyor<number, number>(double);
+    let conveyor = new Conveyor<number, number>(double);
     for (let ii = 0; ii < 10; ii++) {
-        let doubled = await syncConveyor.push(ii);
+        let doubled = await conveyor.push(ii);
         expect(doubled).toEqual(ii * 2);
     }
 });
@@ -28,7 +39,7 @@ test('basics with sync function', async () => {
 
 test('only one async function running at once', async () => {
     let globalId = 0;
-    let conv = new Conveyor<number, void>(async (x: number): Promise<void> => {
+    let conveyor = new Conveyor<number, void>(async (x: number): Promise<void> => {
         // this will pass if only one copy of it runs at once.
         let thisId = Math.floor(Math.random() * 10000);
         globalId = thisId;
@@ -43,13 +54,13 @@ test('only one async function running at once', async () => {
     });
     let thread1 = new Promise<void>(async (resolve, reject) => {
         for (let ii = 0; ii < 5; ii++) {
-            await conv.push(ii);
+            await conveyor.push(ii);
         }
         resolve();
     });
     let thread2 = new Promise<void>(async (resolve, reject) => {
         for (let ii = 100; ii < 105; ii++) {
-            await conv.push(ii);
+            await conveyor.push(ii);
         }
         resolve();
     });
@@ -59,7 +70,7 @@ test('only one async function running at once', async () => {
 test('exercise the queue', async () => {
     // a conveyor that stores everything into a long list
     let accum: number[] = [];
-    let conv = new Conveyor<number, void>(async (x: number): Promise<void> => {
+    let conveyor = new Conveyor<number, void>(async (x: number): Promise<void> => {
         await sleep(10);
         accum.push(x);
         await sleep(10);
@@ -69,7 +80,7 @@ test('exercise the queue', async () => {
     let promises = [];
     let expectedAccum = [];
     for (let tt = 0; tt < numThreads; tt++) {
-        promises.push(conv.push(tt));
+        promises.push(conveyor.push(tt));
         expectedAccum.push(tt);
     }
     // confirm that none of the items arrived yet
@@ -85,17 +96,17 @@ test('priority queue', async () => {
     // a conveyor that stores everything into a long list
     let accum: number[] = [];
     let sortKeyFn = (n: number) => n;
-    let conv = new Conveyor<number, void>(async (x: number): Promise<void> => {
+    let conveyor = new Conveyor<number, void>(async (x: number): Promise<void> => {
         await sleep(10);
         accum.push(x);
         await sleep(10);
     }, sortKeyFn);
-    expect(conv._sortKeyFn).not.toBeNull();
+    expect(conveyor._sortKeyFn).not.toBeNull();
 
     let input = [1, 7, 6, 9, 4, 2, 2, 3];
     let promises = [];
     for (let val of input) {
-        promises.push(conv.push(val));
+        promises.push(conveyor.push(val));
     }
     // confirm that none of the items arrived yet
     expect(accum.length).toBe(0);
@@ -118,6 +129,8 @@ test('error handling with sync handler', async () => {
         syncConveyor.push(ii);
     }
     for (let ii = 0; ii < 10; ii++) {
+        // insert more items
+        // only this one will cause an error...
         if (ii === 4) {
             try {
                 await syncConveyor.push(ii);
@@ -125,6 +138,7 @@ test('error handling with sync handler', async () => {
             } catch (e) {
                 expect('' + e).toMatch('Error: x is four');
             }
+        // the rest will succeed, even after the error
         } else {
             let doubled = await syncConveyor.push(ii);
             expect(doubled).toEqual(ii * 2);
@@ -138,21 +152,21 @@ test('error handling with async handler', async () => {
         if (x === 4) { throw new Error('x is four'); }
         return x * 2;
     };
-    let syncConveyor = new Conveyor<number, number>(doubleAsync);
+    let asyncConveyor = new Conveyor<number, number>(doubleAsync);
     // preload with some things that won't cause errors
     for (let ii = 100; ii < 110; ii++) {
-        syncConveyor.push(ii);
+        asyncConveyor.push(ii);
     }
     for (let ii = 0; ii < 10; ii++) {
         if (ii === 4) {
             try {
-                await syncConveyor.push(ii);
+                await asyncConveyor.push(ii);
                 expect(true).toBe(false);
             } catch (e) {
                 expect('' + e).toMatch('Error: x is four');
             }
         } else {
-            let doubled = await syncConveyor.push(ii);
+            let doubled = await asyncConveyor.push(ii);
             expect(doubled).toEqual(ii * 2);
         }
     }
