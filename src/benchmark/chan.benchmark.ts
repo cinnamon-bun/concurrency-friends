@@ -8,24 +8,23 @@ import {
 
 //================================================================================
 
-let main = async () => {
-    let log = console.log;
-    let runner = new BenchmarkRunner(log);
+let benchmarkChan = async (runner: BenchmarkRunner) => {
     runner.setScenario('chan');
     let chan: Chan<number>;
 
-    let iters = 100000;
+    let iters = 150000;
+    let itersString = Number(iters).toLocaleString('en-US');
 
-    await runner.runOnce(`plain array.  put.  items: ${iters}`, {actualIters: iters}, async () => {
+    await runner.runOnce(`...for comparison: plain array.  put.  items: ${itersString}`, {actualIters: iters}, async () => {
         let arr: number[] = [];
         for (let ii = 0; ii < iters; ii++) {
             arr.push(ii);
         }
     });
 
-    await runner.runOnce(`plain array.  alternating put and get.  items: ${iters}`, {actualIters: iters}, async () => {
+    await runner.runOnce(`...for comparison: plain array.  alternating put and get.  items: ${itersString}`, {actualIters: iters}, async () => {
         let arr: number[] = [];
-        for (let ii = 0; ii < iters; ii++) {
+        for (let ii = 0; ii < iters/2; ii++) {
             arr.push(ii);
             arr.push(ii);
             arr.shift();
@@ -33,19 +32,19 @@ let main = async () => {
         }
     });
 
-    await runner.runOnce(`plain array.  put and get in series.  items: ${iters}`, {actualIters: iters}, async () => {
+    await runner.runOnce(`...for comparison: plain array.  put and get in series.  items: ${itersString}`, {actualIters: iters}, async () => {
         let arr: number[] = [];
         for (let ii = 0; ii < iters; ii++) {
             arr.push(ii);
         }
         for (let ii = 0; ii < iters; ii++) {
-            arr.shift();
+            arr.shift();  // shift is very slow on large arrays
         }
     });
 
 
     chan = new Chan<number>();
-    await runner.runOnce(`put.  items: ${iters}`, {actualIters: iters}, async () => {
+    await runner.runOnce(`chan: put.  items: ${itersString}`, {actualIters: iters}, async () => {
         for (let ii = 0; ii < iters; ii++) {
             await chan.put(ii);
         }
@@ -53,8 +52,8 @@ let main = async () => {
     chan.close();
 
     chan = new Chan<number>();
-    await runner.runOnce(`alternating put and get.  items: ${iters}`, {actualIters: iters}, async () => {
-        for (let ii = 0; ii < iters; ii++) {
+    await runner.runOnce(`chan: alternating put and get.  items: ${itersString}`, {actualIters: iters}, async () => {
+        for (let ii = 0; ii < iters/2; ii++) {
             await chan.put(ii);
             await chan.put(ii);
             await chan.get();
@@ -64,7 +63,7 @@ let main = async () => {
     chan.close();
 
     chan = new Chan<number>();
-    await runner.runOnce(`put and get in series.  items: ${iters}`, {actualIters: iters}, async () => {
+    await runner.runOnce(`chan: put and get in series.  items: ${itersString}`, {actualIters: iters}, async () => {
         for (let ii = 0; ii < iters; ii++) {
             await chan.put(ii);
         }
@@ -76,7 +75,7 @@ let main = async () => {
 
     for (let CAPACITY of [0, 1, 2, 5, 100, null]) {
         chan = new Chan<number>(CAPACITY);
-        await runner.runOnce(`put and get in parallel.  items: ${iters}; capacity: ${CAPACITY}`, {actualIters: iters}, async () => {
+        await runner.runOnce(`chan: put and get in parallel.  items: ${itersString}; capacity: ${CAPACITY}`, {actualIters: iters}, async () => {
             let d1 = makeDeferred();
             let d2 = makeDeferred();
             queueMicrotask(async () => {
@@ -98,7 +97,7 @@ let main = async () => {
     }
 
     chan = new Chan<number>();
-    await runner.runOnce(`put, seal, and forEach in series.  items: ${iters}`, {actualIters: iters}, async () => {
+    await runner.runOnce(`chan: put, seal, and forEach in series.  items: ${itersString}`, {actualIters: iters}, async () => {
         for (let ii = 0; ii < iters; ii++) {
             await chan.put(ii);
         }
@@ -109,7 +108,7 @@ let main = async () => {
 
     for (let CAPACITY of [0, 1, 2, 5, 100, null]) {
         chan = new Chan<number>(CAPACITY);
-        await runner.runOnce(`put, seal, and forEach in parallel.  items: ${iters}; capacity: ${CAPACITY}`, {actualIters: iters}, async () => {
+        await runner.runOnce(`chan: put, seal, and forEach in parallel.  items: ${itersString}; capacity: ${CAPACITY}`, {actualIters: iters}, async () => {
             let d1 = makeDeferred();
             let d2 = makeDeferred();
             queueMicrotask(async () => {
@@ -130,5 +129,9 @@ let main = async () => {
     }
 };
 
-main();
+//================================================================================
+// MAIN
+
+let runner = new BenchmarkRunner(console.log);
+benchmarkChan(runner);
 
