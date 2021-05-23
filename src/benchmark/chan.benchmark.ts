@@ -1,14 +1,10 @@
-import {
-    Chan,
-} from '../chan';
+import { Chan } from '../chan';
 import { makeDeferred } from '../deferred';
-import {
-    BenchmarkRunner,
-} from './benchmark-runner';
+import { BenchmarkRunner } from './benchmark-runner';
 
 //================================================================================
 
-let benchmarkChan = async (runner: BenchmarkRunner) => {
+export let benchmarkChan = async (runner: BenchmarkRunner) => {
     runner.setScenario('chan');
     let chan: Chan<number>;
 
@@ -128,10 +124,3 @@ let benchmarkChan = async (runner: BenchmarkRunner) => {
         chan.close();
     }
 };
-
-//================================================================================
-// MAIN
-
-let runner = new BenchmarkRunner(console.log);
-benchmarkChan(runner);
-

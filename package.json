@@ -16,7 +16,7 @@
     "build": "tsc",
     "clean-build": "yarn clean && yarn build",
     "clean-build-test": "yarn clean && yarn build && yarn test",
-    "benchmark": "mkdir -p benchmark-results && yarn clean && yarn build && node --expose-gc build/benchmark/*.benchmark.js | tee benchmark-results/benchmark.txt",
+    "benchmark": "mkdir -p benchmark-results && yarn clean && yarn build && node --expose-gc build/benchmark/run-benchmarks.js | tee benchmark-results/benchmark.txt",
     "test": "jest src/test/*.ts",
     "test-coverage": "jest src/test/*.ts --coverage",
     "test-chan": "jest src/test/chan.test.ts --verbose",

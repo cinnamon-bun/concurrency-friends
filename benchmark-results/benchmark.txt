@@ -1,23 +1,28 @@
-2021-05-23T20:56:21.901Z
+2021-05-23T21:02:26.647Z
+
+> conveyor
+  > ops/sec
+  >  37,500,000:  ...for comparison: run sync function 150,000 times.
+  >  10,714,286:  ...for comparison: run async function 150,000 times.
 
 > chan
   > ops/sec
-  >  21,428,571:  ...for comparison: plain array.  put.  items: 150,000
+  >  30,000,000:  ...for comparison: plain array.  put.  items: 150,000
   >  37,500,000:  ...for comparison: plain array.  alternating put and get.  items: 150,000
-  >      60,680:  ...for comparison: plain array.  put and get in series.  items: 150,000
-  >   2,631,579:  chan: put.  items: 150,000
-  >   2,142,857:  chan: alternating put and get.  items: 150,000
-  >      60,459:  chan: put and get in series.  items: 150,000
-  >   1,630,435:  chan: put and get in parallel.  items: 150,000; capacity: 0
-  >   2,272,727:  chan: put and get in parallel.  items: 150,000; capacity: 1
-  >   2,419,355:  chan: put and get in parallel.  items: 150,000; capacity: 2
-  >   2,459,016:  chan: put and get in parallel.  items: 150,000; capacity: 5
-  >   2,380,952:  chan: put and get in parallel.  items: 150,000; capacity: 100
-  >   2,380,952:  chan: put and get in parallel.  items: 150,000; capacity: null
-  >      59,335:  chan: put, seal, and forEach in series.  items: 150,000
-  >   1,415,094:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 0
-  >   1,612,903:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 1
+  >      60,606:  ...for comparison: plain array.  put and get in series.  items: 150,000
+  >   2,777,778:  chan: put.  items: 150,000
+  >   2,238,806:  chan: alternating put and get.  items: 150,000
+  >      60,508:  chan: put and get in series.  items: 150,000
+  >   1,666,667:  chan: put and get in parallel.  items: 150,000; capacity: 0
+  >   2,307,692:  chan: put and get in parallel.  items: 150,000; capacity: 1
+  >   2,380,952:  chan: put and get in parallel.  items: 150,000; capacity: 2
+  >   2,380,952:  chan: put and get in parallel.  items: 150,000; capacity: 5
+  >   2,459,016:  chan: put and get in parallel.  items: 150,000; capacity: 100
+  >   2,500,000:  chan: put and get in parallel.  items: 150,000; capacity: null
+  >      59,032:  chan: put, seal, and forEach in series.  items: 150,000
+  >   1,442,308:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 0
+  >   1,595,745:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 1
   >   1,578,947:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 2
-  >   1,666,667:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 5
-  >   1,470,588:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 100
-  >     122,349:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: null
+  >   1,704,545:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 5
+  >   1,546,392:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 100
+  >     121,261:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: null
