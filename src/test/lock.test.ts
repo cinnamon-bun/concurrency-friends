@@ -1,20 +1,20 @@
 import 'jest';
 
-import { Lock, PriorityLock } from '../mutex';
+import { Lock, PriorityLock } from '../lock';
 import { sleep } from '../util';
 
 test('return value', async () => {
-    let mutex = new Lock<number>();
-    let result = await mutex.run(async (): Promise<number> => {
+    let lock = new Lock<number>();
+    let result = await lock.run(async (): Promise<number> => {
         return 123;
     });
     expect(result).toEqual(123);
 });
 
 test('error in sync function', async () => {
-    let mutex = new Lock<number>();
+    let lock = new Lock<number>();
     try {
-        await mutex.run((): number => {
+        await lock.run((): number => {
             throw new Error('oops');
         });
         expect(true).toBe(false);
@@ -24,9 +24,9 @@ test('error in sync function', async () => {
 });
 
 test('error in async function', async () => {
-    let mutex = new Lock<number>();
+    let lock = new Lock<number>();
     try {
-        await mutex.run(async (): Promise<number> => {
+        await lock.run(async (): Promise<number> => {
             throw new Error('oops');
         });
         expect(true).toBe(false);
@@ -51,27 +51,27 @@ test('basics', async () => {
         expect(globalId).toEqual(thisId);
     };
 
-    let mutex = new Lock<void>();
-    mutex.run(myFn);
-    mutex.run(myFn);
-    await mutex.run(myFn);
-    await mutex.run(myFn);
-    mutex.run(myFn);
-    mutex.run(myFn);
-    await mutex.run(myFn);
+    let lock = new Lock<void>();
+    lock.run(myFn);
+    lock.run(myFn);
+    await lock.run(myFn);
+    await lock.run(myFn);
+    lock.run(myFn);
+    lock.run(myFn);
+    await lock.run(myFn);
 });
 
 test('should run in order - sync', async () => {
     let array: number[] = [];
-    let mutex = new Lock<any>();
-    mutex.run(() => array.push(0));
-    mutex.run(() => array.push(1));
-    await mutex.run(() => array.push(2));
+    let lock = new Lock<any>();
+    lock.run(() => array.push(0));
+    lock.run(() => array.push(1));
+    await lock.run(() => array.push(2));
     expect(array).toEqual([0, 1, 2]);
-    await mutex.run(() => array.push(3));
-    mutex.run(() => array.push(4));
-    mutex.run(() => array.push(5));
-    await mutex.run(() => array.push(6));
+    await lock.run(() => array.push(3));
+    lock.run(() => array.push(4));
+    lock.run(() => array.push(5));
+    await lock.run(() => array.push(6));
     expect(array).toEqual([0, 1, 2, 3, 4, 5, 6]);
 });
 
@@ -83,19 +83,19 @@ test('should run in order - async', async () => {
             array.push(n);
         };
     };
-    let mutex = new Lock<void>();
-    mutex.run(makePushFn(0, 20));
-    mutex.run(makePushFn(1, 8));
-    await mutex.run(makePushFn(2, 4));
+    let lock = new Lock<void>();
+    lock.run(makePushFn(0, 20));
+    lock.run(makePushFn(1, 8));
+    await lock.run(makePushFn(2, 4));
     expect(array).toEqual([0, 1, 2]);
-    await mutex.run(makePushFn(3, 50));
-    mutex.run(makePushFn(4, 40));
-    mutex.run(makePushFn(5, 24));
-    await mutex.run(makePushFn(6, 5));
+    await lock.run(makePushFn(3, 50));
+    lock.run(makePushFn(4, 40));
+    lock.run(makePushFn(5, 24));
+    await lock.run(makePushFn(6, 5));
     expect(array).toEqual([0, 1, 2, 3, 4, 5, 6]);
 });
 
-test('priority mutex but with regular mutex', async () => {
+test('priority lock but with regular lock', async () => {
     let array: number[] = [];
     let makePushFn = (n: number, d: number) => {
         return async () => {
@@ -103,20 +103,20 @@ test('priority mutex but with regular mutex', async () => {
             array.push(n);
         };
     };
-    let mutex = new Lock<void>();
-    mutex.run(makePushFn(0, 50));
-    mutex.run(makePushFn(3, 50));
-    mutex.run(makePushFn(1, 50));
-    await mutex.run(makePushFn(2, 50));
+    let lock = new Lock<void>();
+    lock.run(makePushFn(0, 50));
+    lock.run(makePushFn(3, 50));
+    lock.run(makePushFn(1, 50));
+    await lock.run(makePushFn(2, 50));
     expect(array).toEqual([0, 3, 1, 2]);
-    mutex.run(makePushFn(0, 50));
-    mutex.run(makePushFn(3, 50));
-    mutex.run(makePushFn(1, 50));
-    await mutex.run(makePushFn(2, 50));
+    lock.run(makePushFn(0, 50));
+    lock.run(makePushFn(3, 50));
+    lock.run(makePushFn(1, 50));
+    await lock.run(makePushFn(2, 50));
     expect(array).toEqual([0, 3, 1, 2, 0, 3, 1, 2]);
 });
 
-test('priority mutex', async () => {
+test('priority lock', async () => {
     let array: number[] = [];
     let makePushFn = (n: number, d: number) => {
         return async () => {
@@ -124,17 +124,17 @@ test('priority mutex', async () => {
             array.push(n);
         };
     };
-    let mutex = new PriorityLock<void>();
-    mutex.run(0, makePushFn(0, 50));
-    mutex.run(3, makePushFn(3, 50));
-    mutex.run(1, makePushFn(1, 50));
-    mutex.run(2, makePushFn(2, 50));
-    await mutex.run(999, () => { });  // wait until the queue is empty
+    let lock = new PriorityLock<void>();
+    lock.run(0, makePushFn(0, 50));
+    lock.run(3, makePushFn(3, 50));
+    lock.run(1, makePushFn(1, 50));
+    lock.run(2, makePushFn(2, 50));
+    await lock.run(999, () => { });  // wait until the queue is empty
     expect(array).toEqual([0, 1, 2, 3]);
-    mutex.run(0, makePushFn(0, 50));
-    mutex.run(3, makePushFn(3, 50));
-    mutex.run(1, makePushFn(1, 50));
-    await mutex.run(2, makePushFn(2, 50));
-    await mutex.run(999, () => { });
+    lock.run(0, makePushFn(0, 50));
+    lock.run(3, makePushFn(3, 50));
+    lock.run(1, makePushFn(1, 50));
+    await lock.run(2, makePushFn(2, 50));
+    await lock.run(999, () => { });
     expect(array).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
 });
