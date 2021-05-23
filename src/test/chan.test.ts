@@ -959,4 +959,24 @@ describe(`forEach`, () => {
         // items should not be interleaved
         expect(receivedItems).toEqual([1, 1, 2, 2, 3, 3]);
     });
+
+    test(`forEach stopping when callback returns false`, async () => {
+        let chanInf = new Chan<number>();
+        await chanInf.put(1);
+        await chanInf.put(2);
+        await chanInf.put(3);
+        await chanInf.put(4);
+        await chanInf.put(5);
+        chanInf.seal();
+
+        let receivedItems: number[] = [];
+
+        await chanInf.forEach(async (item) => {
+            receivedItems.push(item);
+            if (item === 3) { return false; }  // ask forEach to stop
+        });
+
+        // should stop at 3
+        expect(receivedItems).toEqual([1, 2, 3]);
+    });
 });
