@@ -1,0 +1,23 @@
+2021-05-23T20:36:03.068Z
+
+> chan
+  > ops/sec
+  > 16666667: plain array.  put.  items: 100000
+  > 20000000: plain array.  alternating put and get.  items: 100000
+  >    91158: plain array.  put and get in series.  items: 100000
+  >  2564103: put.  items: 100000
+  >  1086957: alternating put and get.  items: 100000
+  >    89767: put and get in series.  items: 100000
+  >  1408451: put and get in parallel.  items: 100000; capacity: 0
+  >  2127660: put and get in parallel.  items: 100000; capacity: 1
+  >  2325581: put and get in parallel.  items: 100000; capacity: 2
+  >  2380952: put and get in parallel.  items: 100000; capacity: 5
+  >  2222222: put and get in parallel.  items: 100000; capacity: 100
+  >  2325581: put and get in parallel.  items: 100000; capacity: null
+  >    88652: put, seal, and forEach in series.  items: 100000
+  >  1388889: put, seal, and forEach in parallel.  items: 100000; capacity: 0
+  >  1538462: put, seal, and forEach in parallel.  items: 100000; capacity: 1
+  >  1562500: put, seal, and forEach in parallel.  items: 100000; capacity: 2
+  >  1515152: put, seal, and forEach in parallel.  items: 100000; capacity: 5
+  >  1470588: put, seal, and forEach in parallel.  items: 100000; capacity: 100
+  >   190476: put, seal, and forEach in parallel.  items: 100000; capacity: null

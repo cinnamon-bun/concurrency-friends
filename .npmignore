@@ -4,7 +4,9 @@ coverage/
 src/
 build/test/
 build/example/
+build/benchmark/
 tsconfig.json
 .vscode
 depchart/
 chan-types.ts.txt
+benchmark-results/*
