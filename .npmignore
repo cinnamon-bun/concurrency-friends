@@ -1,12 +1,11 @@
-.github/
-.nyc_output/
-coverage/
-src/
+# Ignore every file in the repo
+/*
+
+# Then unignore the dist folder
+!/build
+
+# Then re-ignore the extra built files
 build/test/
 build/example/
 build/benchmark/
-tsconfig.json
-.vscode
-depchart/
-chan-types.ts.txt
-benchmark-results/*
+
