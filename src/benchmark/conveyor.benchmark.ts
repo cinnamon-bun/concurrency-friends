@@ -27,6 +27,7 @@ export let benchmarkConveyor = async (runner: BenchmarkRunner) => {
 
     type Scenario = [ConveyorHandlerFn<number, number>, string];
     let scenarios: Scenario[] = [[double, 'synchronous'], [asyncDouble, 'async']];
+
     for (let scenario of scenarios) {
         let [fn, scenarioName] = scenario;
         conveyor = new Conveyor(fn);
@@ -56,61 +57,26 @@ export let benchmarkConveyor = async (runner: BenchmarkRunner) => {
         });
     }
 
-    let d = makeDeferred<void>();
-    conveyor = new Conveyor((x) => {
-        if (x === iters - 1) {
-            d.resolve();
-        }
-        return x * 2;
-    });
-    await runner.runOnce(`conveyor: ${itersString} items, dump in without awaiting, synchronous.`, {actualIters: iters}, async () => {
-        for (let ii = 0; ii < iters; ii++) {
-            conveyor.push(ii);
-        }
-        await d.promise;
-    });
+    for (let scenario of scenarios) {
+        let [fn, scenarioName] = scenario;
+        conveyor = new Conveyor(fn);
+        await runner.runOnce(`conveyor: ${itersString} items, dump in without awaiting, ${scenarioName}.`, {actualIters: iters}, async () => {
+            for (let ii = 0; ii < iters - 1; ii++) {
+                conveyor.push(ii);
+            }
+            await conveyor.push(iters-1);  // just wait for the last one
+        });
+    }
 
-    d = makeDeferred<void>();
-    conveyor = new Conveyor(async (x) => {
-        if (x === iters - 1) {
-            d.resolve();
-        }
-        return x * 2;
-    });
-    await runner.runOnce(`conveyor: ${itersString} items, dump in without awaiting, async.`, {actualIters: iters}, async () => {
-        for (let ii = 0; ii < iters; ii++) {
-            conveyor.push(ii);
-        }
-        await d.promise;
-    });
-
-    d = makeDeferred<void>();
-    conveyor = new Conveyor<number, number>(async (x) => {
-        if (x === iters - 1) {
-            d.resolve();
-        }
-        return x * 2;
-    });
-    await runner.runOnce(`conveyor: ${itersString} items, dump in without awaiting, synchronous, priority.`, {actualIters: iters}, async () => {
-        for (let ii = 0; ii < iters; ii++) {
-            conveyor.push(ii, ii * 7.13123123 % 100);
-        }
-        await d.promise;
-    });
-
-    d = makeDeferred<void>();
-    conveyor = new Conveyor<number, number>(async (x) => {
-        if (x === iters - 1) {
-            d.resolve();
-        }
-        return x * 2;
-    });
-    await runner.runOnce(`conveyor: ${itersString} items, dump in without awaiting, async, priority.`, {actualIters: iters}, async () => {
-        for (let ii = 0; ii < iters; ii++) {
-            conveyor.push(ii, ii * 7.13123123 % 100);
-        }
-        await d.promise;
-    });
-
+    for (let scenario of scenarios) {
+        let [fn, scenarioName] = scenario;
+        conveyor = new Conveyor(fn);
+        await runner.runOnce(`conveyor: ${itersString} items, dump in without awaiting, ${scenarioName}, priority.`, {actualIters: iters}, async () => {
+            for (let ii = 0; ii < iters - 1; ii++) {
+                conveyor.push(ii, ii * 7.13123123 % 100);
+            }
+            await conveyor.push(iters-1, 101);  // just wait for the last one
+        });
+    }
 
 };
