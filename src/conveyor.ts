@@ -24,6 +24,7 @@ will be sorted according to sortKeyFn(item), lowest first, while waiting in the 
 */
 
 import stable = require('stable');  // stable array sort
+import Queue from 'yocto-queue';
 
 import { Deferred, makeDeferred } from './deferred';
 
@@ -35,7 +36,7 @@ export type ConveyorSortKeyFn<T> = (item: T) => any;
 type QueueItem<T, R> = {item: T, deferred: Deferred<R> }
 
 export class Conveyor<T, R> {
-    _queue: QueueItem<T, R>[] = [];
+    _queue: Queue<QueueItem<T, R>>;
     _threadIsRunning: boolean = false;
     _handlerFn: ConveyorHandlerFn<T, R>;
     _sortKeyFn: ConveyorSortKeyFn<T> | null;
@@ -44,6 +45,8 @@ export class Conveyor<T, R> {
         // Create a new Conveyor with a sync or async handler function.
         // If sortKeyFn is provided, this is a priority queue style Conveyor.
         //  sortKeyFn takes a single item and returns the value used to sort it.
+
+        this._queue = new Queue<QueueItem<T, R>>();
 
         this._handlerFn = handler;
         this._sortKeyFn = sortKeyFn || null;
@@ -60,11 +63,13 @@ export class Conveyor<T, R> {
 
         // push item into the queue
         let deferred = makeDeferred<R>();  // this will resolve when the item is done being handled
-        this._queue.push({ item, deferred });
+        this._queue.enqueue({ item, deferred });
 
         // if this is a priority queue, keep the queue sorted after pushing
         if (this._sortKeyFn !== null) {
-            stable.inplace(this._queue, (a: QueueItem<T, R>, b: QueueItem<T, R>): number => {
+            let arr = [...this._queue];
+            this._queue.clear();
+            stable.inplace(arr, (a: QueueItem<T, R>, b: QueueItem<T, R>): number => {
                 // istanbul ignore next
                 if (this._sortKeyFn === null) { return 0; }
                 let val1 = this._sortKeyFn(a.item);
@@ -73,6 +78,9 @@ export class Conveyor<T, R> {
                 if (val1 < val2) { return -1; }
                 return 0;
             });
+            for (let x of arr) {
+                this._queue.enqueue(x);
+            }
         }
 
         // wake up the thread
@@ -87,24 +95,25 @@ export class Conveyor<T, R> {
         this._threadIsRunning = true;
 
         while (true) {
-            if (this._queue.length === 0) {
+            // process next item in queue.
+            let nextItem = this._queue.dequeue();
+            if (nextItem === undefined) {
                 // queue is empty; stop thread
                 this._threadIsRunning = false;
                 return;
-            } else {
-                // process next item in queue.
-                let { item, deferred } = this._queue.shift() as QueueItem<T, R>;
-                try {
-                    // run the handler function on the item...
-                    let result = this._handlerFn(item);
-                    if (result instanceof Promise) {
-                        result = await result;
-                    }
-                    // then resolve or reject the promise for whoever added this item to the queue
-                    deferred.resolve(result);
-                } catch (err) {
-                    deferred.reject(err);
+            }
+            // else, queue is not empty
+            let { item, deferred } = nextItem;
+            try {
+                // run the handler function on the item...
+                let result = this._handlerFn(item);
+                if (result instanceof Promise) {
+                    result = await result;
                 }
+                // then resolve or reject the promise for whoever added this item to the queue
+                deferred.resolve(result);
+            } catch (err) {
+                deferred.reject(err);
             }
         }
     }
