@@ -7,7 +7,7 @@ import { sleep } from '../util';
 
 let makeItems = (name: string, count: number): Chan<string> => {
     let outChan = new Chan<string>(2);
-    setImmediate(async () => {
+    setTimeout(async () => {
         // Put some items into the channel
         for (let ii = 0; ii < count; ii++) {
             // Wait a random amount of time, to allow
@@ -20,7 +20,7 @@ let makeItems = (name: string, count: number): Chan<string> => {
         }
         console.log(`${name} is done`);
         outChan.seal();
-    });
+    }, 0);
     return outChan;
 };
 
@@ -28,7 +28,7 @@ let zip = <T>(chan1: Chan<T>, chan2: Chan<T>): Chan<[T, T]> => {
     // Given two channels, output a series of pairs of items from each channel.
     // Stop when the shorter channel runs out.
     let outChan = new Chan<[T, T]>(0);
-    setImmediate(async () => {
+    setTimeout(async () => {
         while (true) {
             let item1: T;
             try {
@@ -59,7 +59,7 @@ let zip = <T>(chan1: Chan<T>, chan2: Chan<T>): Chan<[T, T]> => {
             console.log('    zip: making a pair');
             outChan.put([item1, item2]);
         }
-    });
+    }, 0);
     return outChan;
 };
 
