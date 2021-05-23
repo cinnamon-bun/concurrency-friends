@@ -12,7 +12,7 @@ digraph G {
     
     // files in their folder clusters
 
-    subgraph cluster6723605718 {
+    subgraph cluster3617124457 {
         label=<<b>src</b>>;
         style="rounded";
         color=bisque4;
@@ -24,7 +24,20 @@ digraph G {
         "src/lock.ts" [label="lock.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         "src/util.ts" [label="util.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
 
-        subgraph cluster4794301731 {
+        subgraph cluster711544665 {
+            label=<<b>benchmark</b>>;
+            style="rounded,filled";
+            fillcolor=bisque;
+            color=bisque4;
+            penwidth=2;
+                
+            "src/benchmark/benchmark-runner.ts" [label="benchmark-runner.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+            "src/benchmark/chan.benchmark.ts" [label="chan.benchmark.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+            "src/benchmark/conveyor.benchmark.ts" [label="conveyor.benchmark.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+            "src/benchmark/run-benchmarks.ts" [label="run-benchmarks.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+        }
+
+        subgraph cluster7397078218 {
             label=<<b>example</b>>;
             style="rounded,filled";
             fillcolor=bisque;
@@ -36,7 +49,7 @@ digraph G {
             "src/example/chan-zip.ts" [label="chan-zip.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         }
 
-        subgraph cluster1206226089 {
+        subgraph cluster2257689938 {
             label=<<b>test</b>>;
             style="rounded,filled";
             fillcolor=bisque;
@@ -49,7 +62,21 @@ digraph G {
         }
     }
 
+    // packages not in their own cluster
+        "heap" [shape=box3d, style=filled, fillcolor=cornsilk3, color=cornsilk4];
+        "jest" [shape=box3d, style=filled, fillcolor=cornsilk3, color=cornsilk4];
+
     // edges between files
+    "src/benchmark/benchmark-runner.ts" -> "src/util.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/chan.benchmark.ts" -> "src/chan.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/chan.benchmark.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/chan.benchmark.ts" -> "src/benchmark/benchmark-runner.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/conveyor.benchmark.ts" -> "src/conveyor.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/conveyor.benchmark.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/conveyor.benchmark.ts" -> "src/benchmark/benchmark-runner.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/run-benchmarks.ts" -> "src/benchmark/benchmark-runner.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/run-benchmarks.ts" -> "src/benchmark/conveyor.benchmark.ts" [penwidth=2; color=darkslategray4];
+    "src/benchmark/run-benchmarks.ts" -> "src/benchmark/chan.benchmark.ts" [penwidth=2; color=darkslategray4];
     "src/chan.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
     "src/conveyor.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
     "src/example/chan-producer-consumer.ts" -> "src/chan.ts" [penwidth=2; color=darkslategray4];
@@ -65,5 +92,11 @@ digraph G {
     "src/test/conveyor.test.ts" -> "src/util.ts" [penwidth=2; color=darkslategray4];
     "src/test/lock.test.ts" -> "src/lock.ts" [penwidth=2; color=darkslategray4];
     "src/test/lock.test.ts" -> "src/util.ts" [penwidth=2; color=darkslategray4];
+
+    // edges from files to packages
+    "src/conveyor.ts" -> "heap" [penwidth=1.5; style=dashed, color=cornsilk4, weight=1];
+    "src/test/chan.test.ts" -> "jest" [penwidth=1.5; style=dashed, color=cornsilk4, weight=1];
+    "src/test/conveyor.test.ts" -> "jest" [penwidth=1.5; style=dashed, color=cornsilk4, weight=1];
+    "src/test/lock.test.ts" -> "jest" [penwidth=1.5; style=dashed, color=cornsilk4, weight=1];
 
 }

@@ -36,8 +36,7 @@ Status: tested, working, but not production ready.
     - [Run](#run)
   - [Return values and function parameters](#return-values-and-function-parameters)
   - [Errors](#errors)
-  - [PriorityLock](#prioritylock)
-  - [PriorityLock API](#prioritylock-api)
+  - [Priority](#priority)
 - [Develop](#develop)
   - [File dependency chart](#file-dependency-chart)
   - [Updating the README table of contents](#updating-the-readme-table-of-contents)
@@ -770,6 +769,8 @@ lock.run(() => console.log('two'),   2);
 ## File dependency chart
 
 `A --> B` means file A imports file B.
+
+The brown boxes are external libraries.
 
 Just the basics:
 

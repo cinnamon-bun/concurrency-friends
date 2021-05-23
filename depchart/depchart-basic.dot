@@ -12,7 +12,7 @@ digraph G {
     
     // files in their folder clusters
 
-    subgraph cluster348294874 {
+    subgraph cluster6282160516 {
         label=<<b>src</b>>;
         style="rounded";
         color=bisque4;
@@ -25,9 +25,15 @@ digraph G {
         "src/util.ts" [label="util.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
     }
 
+    // packages not in their own cluster
+        "heap" [shape=box3d, style=filled, fillcolor=cornsilk3, color=cornsilk4];
+
     // edges between files
     "src/chan.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
     "src/conveyor.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
     "src/lock.ts" -> "src/conveyor.ts" [penwidth=2; color=darkslategray4];
+
+    // edges from files to packages
+    "src/conveyor.ts" -> "heap" [penwidth=1.5; style=dashed, color=cornsilk4, weight=1];
 
 }

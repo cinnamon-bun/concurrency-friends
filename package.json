@@ -22,8 +22,8 @@
     "test-chan": "jest src/test/chan.test.ts --verbose",
     "test-conveyor": "jest src/test/conveyor.test.ts --verbose",
     "test-lock": "jest src/test/lock.test.ts --verbose",
-    "depchart-basic": "mkdir   -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts `find src | grep '/example/'` `find src | grep '/test/'` --rankdir LR -o depchart/depchart-basic --node_modules omit",
-    "depchart-all": "mkdir     -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts                                                          --rankdir LR -o depchart/depchart-all     --node_modules omit",
+    "depchart-basic": "mkdir   -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts `find src | grep '/example/'` `find src | grep '/test/'` `find src | grep '/benchmark'` --rankdir LR -o depchart/depchart-basic --node_modules separated",
+    "depchart-all": "mkdir     -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts                                                                                         --rankdir LR -o depchart/depchart-all   --node_modules separated",
     "depchart": "yarn depchart-all && yarn depchart-basic",
     "toc": "doctoc --title '**Contents**' README.md",
     "prepublishOnly": "npm run clean && npm run build && npm run test"
