@@ -37,10 +37,10 @@ Status: tested, working, but not production ready.
   - [Return values and function parameters](#return-values-and-function-parameters)
   - [Errors](#errors)
   - [PriorityLock](#prioritylock)
+  - [PriorityLock API](#prioritylock-api)
 - [Develop](#develop)
   - [File dependency chart](#file-dependency-chart)
   - [Updating the README table of contents](#updating-the-readme-table-of-contents)
-  - [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -773,9 +773,3 @@ To regenerate these diagrams, run `yarn depchart`.  You'll need `graphviz` insta
 ## Updating the README table of contents
 
 `yarn toc`
-
-## TODO
-
-* test when user-provided functions throw errors
-* improve chan.forEach
-* add chan.end()

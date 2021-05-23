@@ -111,7 +111,7 @@ export class Conveyor<T, R> {
 
 }
 
-// TODO:
-//     allow the handler to return false to close the conveyor?
-//     add close() and closed?
-//     send some message to the handler when the queue becomes idle, maybe undefined?
+// TODO: allow the handler to return false to close the conveyor?
+// TODO: add close() and closed?
+// TODO: send a special parameter to the handler when the queue becomes idle, maybe undefined?
+// TODO: rebuild on top of Chan?
