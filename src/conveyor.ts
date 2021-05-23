@@ -18,13 +18,18 @@ When pushed, and item won't be processed until queueMicrotask runs, or later.
 
 The queue length is unlimited.
 
-If you provide a sortKeyFn function this becomes a priority queue.  Items in the queue
-will be sorted according to sortKeyFn(item), lowest first, while waiting in the queue.
+You can provide a priority as a second parameter to push, like conveyor.push(item, 7).
+
+Lower priorities will run first.
+
+Items without a priority are auto-assigned a priority that keeps incrementing behind
+the scenes, making it possible to mix prioritied items with non-prioritied items.
+
+The auto-priorities start at 1000 and increase with each push.
 
 */
 
-import stable = require('stable');  // stable array sort
-import Queue from 'yocto-queue';
+import Heap from 'heap';
 
 import { Deferred, makeDeferred } from './deferred';
 
@@ -32,55 +37,39 @@ import { Deferred, makeDeferred } from './deferred';
 // R: return type of the handler function
 
 export type ConveyorHandlerFn<T, R> = (item: T) => R | Promise<R>;
-export type ConveyorSortKeyFn<T> = (item: T) => any;
-type QueueItem<T, R> = {item: T, deferred: Deferred<R> }
+type QueueItem<T, R> = { item: T, deferred: Deferred<R>, priority: number }
 
 export class Conveyor<T, R> {
-    _queue: Queue<QueueItem<T, R>>;
+    _queue: Heap<QueueItem<T, R>>;
     _threadIsRunning: boolean = false;
     _handlerFn: ConveyorHandlerFn<T, R>;
-    _sortKeyFn: ConveyorSortKeyFn<T> | null;
+    _ii: number = 1000;
 
-    constructor(handler: ConveyorHandlerFn<T, R>, sortKeyFn?: ConveyorSortKeyFn<T>) {
+    constructor(handler: ConveyorHandlerFn<T, R>) {
         // Create a new Conveyor with a sync or async handler function.
-        // If sortKeyFn is provided, this is a priority queue style Conveyor.
-        //  sortKeyFn takes a single item and returns the value used to sort it.
-
-        this._queue = new Queue<QueueItem<T, R>>();
 
         this._handlerFn = handler;
-        this._sortKeyFn = sortKeyFn || null;
-
-        // wake up the thread
-        queueMicrotask(this._thread.bind(this));
+        this._queue = new Heap<QueueItem<T, R>>((a: QueueItem<T, R>, b: QueueItem<T, R>) => {
+            return a.priority - b.priority;
+        });
     }
 
-    async push(item: T): Promise<R> {
+    async push(item: T, priority?: number): Promise<R> {
         // Add an item into the conveyor.
         // After the handler finishes running on this item,
         // this promise will resolve with the return value of the handler,
         // or with an exception thrown by the handler.
 
+        // If priority is provided, it will control the order in which
+        // items are handled (if many are waiting).  Lower priorities run
+        // first.  Items not given an explicit priority are given an auto-incrementing
+        // priority starting at 1000.
+
         // push item into the queue
         let deferred = makeDeferred<R>();  // this will resolve when the item is done being handled
-        this._queue.enqueue({ item, deferred });
-
-        // if this is a priority queue, keep the queue sorted after pushing
-        if (this._sortKeyFn !== null) {
-            let arr = [...this._queue];
-            this._queue.clear();
-            stable.inplace(arr, (a: QueueItem<T, R>, b: QueueItem<T, R>): number => {
-                // istanbul ignore next
-                if (this._sortKeyFn === null) { return 0; }
-                let val1 = this._sortKeyFn(a.item);
-                let val2 = this._sortKeyFn(b.item);
-                if (val1 > val2) { return 1; }
-                if (val1 < val2) { return -1; }
-                return 0;
-            });
-            for (let x of arr) {
-                this._queue.enqueue(x);
-            }
+        this._queue.push({ item, deferred, priority: priority ?? this._ii });
+        if (priority === undefined) {
+            this._ii += 1;
         }
 
         // wake up the thread
@@ -96,14 +85,16 @@ export class Conveyor<T, R> {
 
         while (true) {
             // process next item in queue.
-            let nextItem = this._queue.dequeue();
+            //let nextItem = this._queue.dequeue();
+            let nextItem: QueueItem<T, R> | undefined;
+            nextItem = this._queue.pop();
             if (nextItem === undefined) {
                 // queue is empty; stop thread
                 this._threadIsRunning = false;
                 return;
             }
             // else, queue is not empty
-            let { item, deferred } = nextItem;
+            let { item, deferred, priority } = nextItem;
             try {
                 // run the handler function on the item...
                 let result = this._handlerFn(item);

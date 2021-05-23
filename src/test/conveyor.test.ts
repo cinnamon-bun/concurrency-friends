@@ -95,18 +95,16 @@ test('exercise the queue', async () => {
 test('priority queue', async () => {
     // a conveyor that stores everything into a long list
     let accum: number[] = [];
-    let sortKeyFn = (n: number) => n;
     let conveyor = new Conveyor<number, void>(async (x: number): Promise<void> => {
         await sleep(10);
         accum.push(x);
         await sleep(10);
-    }, sortKeyFn);
-    expect(conveyor._sortKeyFn).not.toBeNull();
+    });
 
     let input = [1, 7, 6, 9, 4, 2, 2, 3];
     let promises = [];
     for (let val of input) {
-        promises.push(conveyor.push(val));
+        promises.push(conveyor.push(val, val));
     }
     // confirm that none of the items arrived yet
     expect(accum.length).toBe(0);

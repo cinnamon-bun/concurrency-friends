@@ -97,7 +97,7 @@ Use a Conveyor when you want to process items one at a time, and you want to kno
 
 `await conveyor.push(item)` will add the item to the queue and continues when the handler function is done running on that specific item.  It returns the output of the handler function.
 
-Conveyors can also act as priority queues, bumping some items to the front of the queue, if you provide a sort function.
+Conveyors can also act as priority queues, bumping some items to the front of the queue.
 
 ## Lock
 ```
@@ -569,9 +569,11 @@ try {
 }
 ```
 
-If you provide a `sortKeyFn` function this becomes a priority queue.
-Items in the queue will be sorted according to `sortKeyFn(item)`,
-lowest first (ascending), while waiting in the queue.
+This is actually a priority queue behind the scenes.  Every item you push is given an auto-incrementing priority that starts at 1000.
+
+You can provide your own priority as a second parameter to `push`, like `push(item, 7)`.
+
+Lower priority items will go first (when there's more than one waiting).
 
 ```ts
 // Example: priority queue Conveyor

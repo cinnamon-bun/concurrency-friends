@@ -10,7 +10,7 @@ export let benchmarkConveyor = async (runner: BenchmarkRunner) => {
     let double = (x: number) => x * 2;
     let asyncDouble = async (x: number) => x * 2;
 
-    let iters = 25000;
+    let iters = 100000;
     let itersString = Number(iters).toLocaleString('en-US');
 
     await runner.runOnce(`...for comparison: run sync function ${itersString} times.`, {actualIters: iters}, async () => {
@@ -90,10 +90,10 @@ export let benchmarkConveyor = async (runner: BenchmarkRunner) => {
             d.resolve();
         }
         return x * 2;
-    }, x => (x * 1.2345730498) % 100);
+    });
     await runner.runOnce(`conveyor: ${itersString} items, dump in without awaiting, synchronous, priority.`, {actualIters: iters}, async () => {
         for (let ii = 0; ii < iters; ii++) {
-            conveyor.push(ii);
+            conveyor.push(ii, ii * 7.13123123 % 100);
         }
         await d.promise;
     });
@@ -104,10 +104,10 @@ export let benchmarkConveyor = async (runner: BenchmarkRunner) => {
             d.resolve();
         }
         return x * 2;
-    }, x => (x * 1.2345730498) % 100);
+    });
     await runner.runOnce(`conveyor: ${itersString} items, dump in without awaiting, async, priority.`, {actualIters: iters}, async () => {
         for (let ii = 0; ii < iters; ii++) {
-            conveyor.push(ii);
+            conveyor.push(ii, ii * 7.13123123 % 100);
         }
         await d.promise;
     });
