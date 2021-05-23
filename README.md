@@ -569,11 +569,13 @@ try {
 }
 ```
 
-This is actually a priority queue behind the scenes.  Every item you push is given an auto-incrementing priority that starts at 1000.
+This is actually a priority queue behind the scenes.
 
 You can provide your own priority as a second parameter to `push`, like `push(item, 7)`.
 
-Lower priority items will go first (when there's more than one waiting).
+Priorities can be numbers or strings.  Items with lower priorities will go first, when there's more than one item waiting (lower numbers, or earlier-sorting strings).
+
+Items without priorities are given an auto-incrementing priority number that starts at 1000.  Watch out that these might sort into the middle of your custom-provided priorities, if you are mixing items with and without explicit priorities.
 
 ```ts
 // Example: priority queue Conveyor
@@ -587,9 +589,10 @@ let shoutHandler = (name: string) => console.log('HELLO ' + name);
 
 let shouter = new Conveyor<string, void>(shoutHandler, sortKeyFn);
 
-shouter.push('Bob');
-shouter.push('Alice');
-shouter.push('Carol');
+//           item     priority
+shouter.push('Bob',   'B');
+shouter.push('Alice', 'A');
+shouter.push('Carol', 'C');
 
 // after queueMicrotask would have run,
 // the handler will run on the items in sorted order.

@@ -37,7 +37,7 @@ import { Deferred, makeDeferred } from './deferred';
 // R: return type of the handler function
 
 export type ConveyorHandlerFn<T, R> = (item: T) => R | Promise<R>;
-type QueueItem<T, R> = { item: T, deferred: Deferred<R>, priority: number }
+type QueueItem<T, R> = { item: T, deferred: Deferred<R>, priority: number | string }
 
 export class Conveyor<T, R> {
     _queue: Heap<QueueItem<T, R>>;
@@ -50,11 +50,13 @@ export class Conveyor<T, R> {
 
         this._handlerFn = handler;
         this._queue = new Heap<QueueItem<T, R>>((a: QueueItem<T, R>, b: QueueItem<T, R>) => {
-            return a.priority - b.priority;
+            if (a.priority < b.priority) { return -1; }
+            if (a.priority > b.priority) { return 1; }
+            return 0;
         });
     }
 
-    async push(item: T, priority?: number): Promise<R> {
+    async push(item: T, priority?: number | string): Promise<R> {
         // Add an item into the conveyor.
         // After the handler finishes running on this item,
         // this promise will resolve with the return value of the handler,

@@ -92,7 +92,7 @@ test('exercise the queue', async () => {
     expect(accum).toEqual(expectedAccum);
 });
 
-test('priority queue', async () => {
+test('priority queue with numbers', async () => {
     // a conveyor that stores everything into a long list
     let accum: number[] = [];
     let conveyor = new Conveyor<number, void>(async (x: number): Promise<void> => {
@@ -115,6 +115,33 @@ test('priority queue', async () => {
     expect(accum.length).toBe(input.length);
     expect(accum).toEqual(input);
 });
+
+test('priority queue with strings', async () => {
+    // a conveyor that stores everything into a long list
+    let accum: string[] = [];
+    let conveyor = new Conveyor<string, void>(async (x: string): Promise<void> => {
+        await sleep(10);
+        accum.push(x);
+        await sleep(10);
+    });
+
+    let input = ['a', 'r', 'e', 'f', 'aaa', 'w'];
+    let promises = [];
+    for (let val of input) {
+        promises.push(conveyor.push(val, val));
+    }
+    // confirm that none of the items arrived yet
+    expect(accum.length).toBe(0);
+    // wait for them all to finish
+    await Promise.all(promises);
+    // confirm that the items all arrived in the right order
+    input.sort();
+    expect(accum.length).toBe(input.length);
+    expect(accum).toEqual(input);
+});
+
+// TODO: mixture of numbers AND strings as priorities,
+// combined with items without explicit priorities
 
 test('error handling with sync handler', async () => {
     let doubleSync = (x: number): number => {
