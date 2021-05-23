@@ -12,7 +12,7 @@ digraph G {
     
     // files in their folder clusters
 
-    subgraph cluster2311094660 {
+    subgraph cluster348294874 {
         label=<<b>src</b>>;
         style="rounded";
         color=bisque4;
@@ -21,12 +21,13 @@ digraph G {
         "src/chan.ts" [label="chan.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         "src/conveyor.ts" [label="conveyor.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         "src/deferred.ts" [label="deferred.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
-        "src/mutex.ts" [label="mutex.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
+        "src/lock.ts" [label="lock.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
         "src/util.ts" [label="util.ts", shape=rectangle; style="rounded,filled"; color=darkslategray3];
     }
 
     // edges between files
     "src/chan.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
-    "src/mutex.ts" -> "src/conveyor.ts" [penwidth=2; color=darkslategray4];
+    "src/conveyor.ts" -> "src/deferred.ts" [penwidth=2; color=darkslategray4];
+    "src/lock.ts" -> "src/conveyor.ts" [penwidth=2; color=darkslategray4];
 
 }
