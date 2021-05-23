@@ -1,6 +1,6 @@
 import 'jest';
 
-import { Lock, PriorityLock } from '../lock';
+import { Lock } from '../lock';
 import { sleep } from '../util';
 
 test('return value', async () => {
@@ -124,17 +124,17 @@ test('priority lock', async () => {
             array.push(n);
         };
     };
-    let lock = new PriorityLock<void>();
-    lock.run(0, makePushFn(0, 50));
-    lock.run(3, makePushFn(3, 50));
-    lock.run(1, makePushFn(1, 50));
-    lock.run(2, makePushFn(2, 50));
-    await lock.run(999, () => { });  // wait until the queue is empty
+    let lock = new Lock<void>();
+    lock.run(makePushFn(0, 50), 0);
+    lock.run(makePushFn(3, 50), 3);
+    lock.run(makePushFn(1, 50), 1);
+    lock.run(makePushFn(2, 50), 2);
+    await lock.run(() => { }, 999);  // wait until the queue is empty
     expect(array).toEqual([0, 1, 2, 3]);
-    lock.run(0, makePushFn(0, 50));
-    lock.run(3, makePushFn(3, 50));
-    lock.run(1, makePushFn(1, 50));
-    await lock.run(2, makePushFn(2, 50));
-    await lock.run(999, () => { });
+    lock.run(makePushFn(0, 50), 0);
+    lock.run(makePushFn(3, 50), 3);
+    lock.run(makePushFn(1, 50), 1);
+    await lock.run( makePushFn(2, 50), 2);
+    await lock.run(() => { }, 999);
     expect(array).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
 });

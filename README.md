@@ -734,18 +734,28 @@ let twelve = await lock.run(() => {
 
 If the function you're calling in `lock.run` throws an error, the error will emerge where you have `await`ed it, as you'd expect.
 
-## PriorityLock
+## Priority
 
-There's also a `PriorityLock` which lets you provide a priority number with each function.  When there are multiple functions waiting in the queue, the **lower** numbered ones will run first.
+The regular `Lock` class lets you provide a number or string priority with each function. When there are multiple functions waiting in the queue, the **lower** valued ones will run first.
+
+(This is built on Conveyor; read the Conveyor docs to learn more about priorities.)
+
+The method is:
 
 ```ts
-let lock = new PriorityLock();
+await result = lock.run(fn, priority);
+```
 
-//    priority
-//       |
-lock.run(3, () => console.log('three'));
-lock.run(7, () => console.log('seven'));
-lock.run(2, () => console.log('two'));
+where priority is `number | string`.
+
+```ts
+let lock = new Lock();
+
+//                                priority
+//                                   |
+lock.run(() => console.log('three'), 3);
+lock.run(() => console.log('seven'), 7);
+lock.run(() => console.log('two'),   2);
 
 // output:
 // lowest priority runs first
@@ -754,10 +764,6 @@ lock.run(2, () => console.log('two'));
 //     three
 //     seven
 ```
-
-## PriorityLock API
-
-It's the same as the `Lock` API, except `run` takes an extra first parameter which is the priority.  See above.
 
 # Develop
 

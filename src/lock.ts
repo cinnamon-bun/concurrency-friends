@@ -58,26 +58,7 @@ export class Lock<R> {
         };
         this._conveyor = new Conveyor<FnToRun<R>, R>(handlerFn);
     }
-    async run(fnToRun: FnToRun<R>): Promise<R> {
-        // This will resolve when the fnToRun has finished running.
-        return await this._conveyor.push(fnToRun);
-    }
-}
-
-export class PriorityLock<R> {
-    _conveyor: Conveyor<FnToRun<R>, R>;
-    constructor() {
-        // A conveyor full of functions, to run one at a time.
-        // At the end of the conveyor, this handler just runs the functions.
-        let handlerFn = async (fnToRun: FnToRun<R>) => {
-            let result = fnToRun();
-            if (result instanceof Promise) { result = await result; }
-            return result;
-        };
-        this._conveyor = new Conveyor<FnToRun<R>, R>(handlerFn);
-    }
-    async run(priority: number, fnToRun: FnToRun<R>): Promise<any> {
-        // Lower priority goes first.
+    async run(fnToRun: FnToRun<R>, priority?: number | string): Promise<R> {
         // This will resolve when the fnToRun has finished running.
         return await this._conveyor.push(fnToRun, priority);
     }
