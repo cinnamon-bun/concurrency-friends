@@ -1,18 +1,5 @@
 2021-05-23T21:23:37.209Z
 
-> conveyor
-  > ops/sec
-  >   8,333,333:  ...for comparison: run sync function 25,000 times.
-  >   4,166,667:  ...for comparison: run async function 25,000 times.
-  >     625,000:  conveyor: 25,000 items, one at a time, synchronous.
-  >     781,250:  conveyor: 25,000 items, one at a time, async.
-  >     862,069:  conveyor: 25,000 items, sets of ten, synchronous.
-  >   1,086,957:  conveyor: 25,000 items, sets of ten, async.
-  >      28,345:  conveyor: 25,000 items, dump in without awaiting, synchronous.
-  >      56,948:  conveyor: 25,000 items, dump in without awaiting, async.
-  >         275:  conveyor: 25,000 items, dump in without awaiting, synchronous, priority.
-  >         272:  conveyor: 25,000 items, dump in without awaiting, async, priority.
-
 > chan
   > ops/sec
   >  30,000,000:  ...for comparison: plain array.  put.  items: 150,000
@@ -34,3 +21,17 @@
   >   1,401,869:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 5
   >   1,376,147:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 100
   >     112,782:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: null
+  >
+> conveyor
+  > ops/sec
+  >   8,333,333:  ...for comparison: run sync function 25,000 times.
+  >   4,166,667:  ...for comparison: run async function 25,000 times.
+  >     625,000:  conveyor: 25,000 items, one at a time, synchronous.
+  >     781,250:  conveyor: 25,000 items, one at a time, async.
+  >     862,069:  conveyor: 25,000 items, sets of ten, synchronous.
+  >   1,086,957:  conveyor: 25,000 items, sets of ten, async.
+  >      28,345:  conveyor: 25,000 items, dump in without awaiting, synchronous.
+  >      56,948:  conveyor: 25,000 items, dump in without awaiting, async.
+  >         275:  conveyor: 25,000 items, dump in without awaiting, synchronous, priority.
+  >         272:  conveyor: 25,000 items, dump in without awaiting, async, priority.
+
