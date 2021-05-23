@@ -4,8 +4,8 @@ import { benchmarkChan } from './chan.benchmark';
 
 let main = async () => {
     let runner = new BenchmarkRunner(console.log);
-    await benchmarkConveyor(runner);
     await benchmarkChan(runner);
+    await benchmarkConveyor(runner);
 };
 
 main();
