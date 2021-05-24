@@ -1,47 +1,47 @@
-2021-05-23T23:16:37.899Z
+2021-05-24T18:08:18.579Z
 
 > chan
   > ops/sec
   >  30,000,000:  ...for comparison: plain array.  put.  items: 150,000
   >  30,000,000:  ...for comparison: plain array.  alternating put and get.  items: 150,000
-  >      59,928:  ...for comparison: plain array.  put and get in series.  items: 150,000
-  >   2,542,373:  chan: put.  items: 150,000
-  >   2,083,333:  chan: alternating put and get.  items: 150,000
-  >      60,338:  chan: put and get in series.  items: 150,000
-  >   1,704,545:  chan: put and get in parallel.  items: 150,000; capacity: 0
-  >   2,272,727:  chan: put and get in parallel.  items: 150,000; capacity: 1
-  >   2,343,750:  chan: put and get in parallel.  items: 150,000; capacity: 2
-  >   2,343,750:  chan: put and get in parallel.  items: 150,000; capacity: 5
-  >   2,380,952:  chan: put and get in parallel.  items: 150,000; capacity: 100
-  >   2,419,355:  chan: put and get in parallel.  items: 150,000; capacity: null
-  >      55,804:  chan: put, seal, and forEach in series.  items: 150,000
-  >   1,500,000:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 0
-  >   1,546,392:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 1
-  >   1,630,435:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 2
-  >   1,578,947:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 5
-  >   1,327,434:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 100
-  >     110,457:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: null
+  >      59,713:  ...for comparison: plain array.  put and get in series.  items: 150,000
+  >   1,898,734:  chan: put.  items: 150,000
+  >   1,807,229:  chan: alternating put and get.  items: 150,000
+  >   1,612,903:  chan: put and get in series.  items: 150,000
+  >   1,515,152:  chan: put and get in parallel.  items: 150,000; capacity: 0
+  >   1,948,052:  chan: put and get in parallel.  items: 150,000; capacity: 1
+  >   1,923,077:  chan: put and get in parallel.  items: 150,000; capacity: 2
+  >   2,000,000:  chan: put and get in parallel.  items: 150,000; capacity: 5
+  >   1,807,229:  chan: put and get in parallel.  items: 150,000; capacity: 100
+  >   2,027,027:  chan: put and get in parallel.  items: 150,000; capacity: null
+  >   1,388,889:  chan: put, seal, and forEach in series.  items: 150,000
+  >   1,388,889:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 0
+  >   1,401,869:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 1
+  >   1,376,147:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 2
+  >   1,315,789:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 5
+  >   1,442,308:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: 100
+  >   1,304,348:  chan: put, seal, and forEach in parallel.  items: 150,000; capacity: null
 
 > conveyor
   > ops/sec
-  >  25,000,000:  ...for comparison: run sync function 100,000 times.
-  >  10,000,000:  ...for comparison: run async function 100,000 times.
-  >   1,030,928:  conveyor: 100,000 items, one at a time, synchronous.
-  >   1,010,101:  conveyor: 100,000 items, one at a time, async.
-  >     990,099:  conveyor: 100,000 items, sets of ten, synchronous.
-  >     900,901:  conveyor: 100,000 items, sets of ten, async.
-  >     297,619:  conveyor: 100,000 items, dump in without awaiting, synchronous.
-  >     320,513:  conveyor: 100,000 items, dump in without awaiting, async.
-  >     240,964:  conveyor: 100,000 items, dump in without awaiting, synchronous, priority.
-  >     311,526:  conveyor: 100,000 items, dump in without awaiting, async, priority.
+  >  50,000,000:  ...for comparison: run sync function 100,000 times.
+  >  11,111,111:  ...for comparison: run async function 100,000 times.
+  >   1,123,596:  conveyor: 100,000 items, one at a time, synchronous.
+  >   1,149,425:  conveyor: 100,000 items, one at a time, async.
+  >   1,234,568:  conveyor: 100,000 items, sets of ten, synchronous.
+  >   1,136,364:  conveyor: 100,000 items, sets of ten, async.
+  >     369,004:  conveyor: 100,000 items, dump in without awaiting, synchronous.
+  >     413,223:  conveyor: 100,000 items, dump in without awaiting, async.
+  >     327,869:  conveyor: 100,000 items, dump in without awaiting, synchronous, priority.
+  >     308,642:  conveyor: 100,000 items, dump in without awaiting, async, priority.
 
 > lock
   > ops/sec
-  >  50,000,000:  ...for comparison: run sync function 100,000 times.
+  >  20,000,000:  ...for comparison: run sync function 100,000 times.
   >  11,111,111:  ...for comparison: run async function 100,000 times.
-  >     877,193:  lock: 100,000 fns, one at a time, synchronous.
-  >     806,452:  lock: 100,000 fns, one at a time, async.
-  >     862,069:  lock: 100,000 fns, sets of ten, synchronous.
-  >     787,402:  lock: 100,000 fns, sets of ten, async.
-  >     290,698:  lock: 100,000 fns, dump in without awaiting, synchronous.
-  >     234,742:  lock: 100,000 fns, dump in without awaiting, async.
+  >     775,194:  lock: 100,000 fns, one at a time, synchronous.
+  >     862,069:  lock: 100,000 fns, one at a time, async.
+  >     952,381:  lock: 100,000 fns, sets of ten, synchronous.
+  >     952,381:  lock: 100,000 fns, sets of ten, async.
+  >     303,951:  lock: 100,000 fns, dump in without awaiting, synchronous.
+  >     286,533:  lock: 100,000 fns, dump in without awaiting, async.

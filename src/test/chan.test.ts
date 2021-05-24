@@ -232,6 +232,7 @@ describe('all the different states', () => {
         // and grab the next waiting get and put
         // it into the queue
         expect(await chan3.get()).toBe(10);
+
         expect(chan3.itemsInQueue).toBe(3);
         expect(chan3.itemsInQueueAndWaitingPuts).toBe(5);
 
