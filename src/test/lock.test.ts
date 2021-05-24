@@ -35,6 +35,40 @@ test('error in async function', async () => {
     }
 });
 
+test('error in async function with bypass', async () => {
+    let lock = new Lock<number>();
+    try {
+        await lock.run(async (): Promise<number> => {
+            throw new Error('oops');
+        }, { bypass: true });
+        expect(true).toBe(false);
+    } catch (err) {
+        expect('' + err).toBe('Error: oops');
+    }
+});
+
+test('regular lock does not run instantly', async () => {
+    let lock = new Lock<void>();
+    let global = 1;
+    lock.run(() => {
+        global = 2;
+    }, { bypass: false });
+    expect(global).toBe(1);
+    await sleep(1);
+    expect(global).toBe(2);
+});
+
+test('bypass does not run instantly', async () => {
+    let lock = new Lock<void>();
+    let global = 1;
+    lock.run(() => {
+        global = 2;
+    }, { bypass: true });
+    expect(global).toBe(1);
+    await sleep(1);
+    expect(global).toBe(2);
+});
+
 test('basics', async () => {
     let globalId: number;
     let myFn = async () => {
@@ -59,6 +93,26 @@ test('basics', async () => {
     lock.run(myFn);
     lock.run(myFn);
     await lock.run(myFn);
+});
+
+test('bypass', async () => {
+    let globalId: number;
+    let myFn = async () => {
+        expect(globalId).toBe(101);
+        await sleep(60);
+        expect(globalId).toBe(102);
+    };
+
+    let lock = new Lock<void>();
+    globalId = 101;
+    let proms: Promise<void>[] = [];
+    proms.push(lock.run(myFn, { bypass: true }));
+    proms.push(lock.run(myFn, { bypass: true }));
+    proms.push(lock.run(myFn, { bypass: true }));
+    await sleep(30);
+    globalId = 102;
+    await sleep(70);
+    await Promise.all(proms);
 });
 
 test('should run in order - sync', async () => {
@@ -125,16 +179,16 @@ test('priority lock', async () => {
         };
     };
     let lock = new Lock<void>();
-    lock.run(makePushFn(0, 50), 0);
-    lock.run(makePushFn(3, 50), 3);
-    lock.run(makePushFn(1, 50), 1);
-    lock.run(makePushFn(2, 50), 2);
-    await lock.run(() => { }, 999);  // wait until the queue is empty
+    lock.run(makePushFn(0, 50), { priority: 0 });
+    lock.run(makePushFn(3, 50), { priority: 3 });
+    lock.run(makePushFn(1, 50), { priority: 1 });
+    lock.run(makePushFn(2, 50), { priority: 2 });
+    await lock.run(() => { }, { priority: 999 });  // wait until the queue is empty
     expect(array).toEqual([0, 1, 2, 3]);
-    lock.run(makePushFn(0, 50), 0);
-    lock.run(makePushFn(3, 50), 3);
-    lock.run(makePushFn(1, 50), 1);
-    await lock.run( makePushFn(2, 50), 2);
-    await lock.run(() => { }, 999);
+    lock.run(makePushFn(0, 50), { priority: 0 });
+    lock.run(makePushFn(3, 50), { priority: 3 });
+    lock.run(makePushFn(1, 50), { priority: 1 });
+    await lock.run( makePushFn(2, 50), { priority: 2 });
+    await lock.run(() => { }, { priority: 999 });
     expect(array).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
 });

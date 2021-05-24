@@ -3,9 +3,11 @@
 A lock is a way to only allow one function to run at a time
 
 First, create your lock:
-    let lock = new Lock();
+    let lock = new Lock<R>();
 
-Then you can feed it functions to run (sync or async).
+R is the return type of the functions you'll feed it.
+
+Now you can feed it functions to run (sync or async).
 It will run them one at a time in the same order that lock.run is called,
 waiting for each one to finish before moving on to the next one.
 It keeps an internal queue of functions waiting for their turn to run.
@@ -37,14 +39,18 @@ and you'll get back the return value of your function:
     // val is 123
 
 Note that functions provided to lock.run won't be started until the next microtask.
-
 */
 
 import { Conveyor } from './conveyor';
+import { makeDeferred } from './deferred';
 
 // R: the return type of any function that can go into the lock
 
 type FnToRun<R> = () => R | Promise<R>;
+interface LockOpts {
+    priority?: number | string,
+    bypass?: boolean,
+}
 
 export class Lock<R> {
     _conveyor: Conveyor<FnToRun<R>, R>;
@@ -58,8 +64,24 @@ export class Lock<R> {
         };
         this._conveyor = new Conveyor<FnToRun<R>, R>(handlerFn);
     }
-    async run(fnToRun: FnToRun<R>, priority?: number | string): Promise<R> {
-        // This will resolve when the fnToRun has finished running.
-        return await this._conveyor.push(fnToRun, priority);
+    async run(fnToRun: FnToRun<R>, opts?: LockOpts): Promise<R> {
+        // priority defaults to undefined
+        let priority: number | string | undefined = opts === undefined ? undefined : opts.priority;
+        // bypass defaults to false
+        let bypass: boolean = opts === undefined ? false : (opts.bypass === true);
+        if (bypass) {
+            let d = makeDeferred<R>();
+            queueMicrotask(async () => {
+                try {
+                    d.resolve(await fnToRun());
+                } catch (err) {
+                    d.reject(err);
+                }
+            });
+            return d.promise;
+        } else {
+            // This will resolve when the fnToRun has finished running.
+            return await this._conveyor.push(fnToRun, priority);
+        }
     }
 }

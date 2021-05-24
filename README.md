@@ -37,6 +37,9 @@ Status: tested, working, but not production ready.
   - [Return values and function parameters](#return-values-and-function-parameters)
   - [Errors](#errors)
   - [Priority](#priority)
+  - [Bypass](#bypass)
+  - [Deadlock](#deadlock)
+  - [Using several locks safely](#using-several-locks-safely)
 - [Develop](#develop)
   - [File dependency chart](#file-dependency-chart)
   - [Updating the README table of contents](#updating-the-readme-table-of-contents)
@@ -617,7 +620,7 @@ Feed your Lock some functions to run.  They can be sync or async functions.
 It will run them **one at a time** in the same order they were provided,
 waiting for each one to finish before moving on to the next one, and returning the value of each one.
 
-It keeps an internal queue of functions waiting for their turn to run.  This can be a priority queue if you use a `PriorityLock`, which lets you prioritize some functions to go first.
+It keeps an internal queue of functions waiting for their turn to run.  You can also give your functions a priority which controls the order they run in, if many are waiting, using an internal priority queue.
 
 ## Example
 
@@ -675,13 +678,23 @@ console.log('done queueing up functions');
 
 Functions provided to `lock.run` won't be started until queueMicrotask would have run, or later.
 
-You can `await lock.run(yourFn)` to wait until your specific function is done running, which might take a while if the queue is long:
+Usually you will `await lock.run(yourFn)` to wait until your specific function is done running, which might take a while if the queue is long:
 
 ```ts
 await lock.run(async () => {
     // do some specific things
 });
 // those specific things are now done
+```
+
+Your functions can return values:
+
+```ts
+let lock = new Lock<number>();
+
+let seven = await lock.run(async () => {
+    return 7;
+});
 ```
 
 ## Lock API
@@ -694,7 +707,14 @@ await lock.run(async () => {
 
 ### Run
 
-`await result = lock.run(fn)`;
+```ts
+await result = lock.run(fn, opts?);
+
+interface LockOpts: {
+    priority?: number,
+    bypass?: boolean,
+}
+```
 
 Queue up a function to run when the lock is free, wait for it to run, and return the result (or throw any error thrown by the function).
 
@@ -742,7 +762,7 @@ The regular `Lock` class lets you provide a number or string priority with each 
 The method is:
 
 ```ts
-await result = lock.run(fn, priority);
+await result = lock.run(fn, { priority: 123 });
 ```
 
 where priority is `number | string`.
@@ -750,18 +770,90 @@ where priority is `number | string`.
 ```ts
 let lock = new Lock();
 
-//                                priority
-//                                   |
-lock.run(() => console.log('three'), 3);
-lock.run(() => console.log('seven'), 7);
-lock.run(() => console.log('two'),   2);
+lock.run(() => console.log('three'), { priority: 3 });
+lock.run(() => console.log('seven'), { priority: 7 });
+lock.run(() => console.log('two'),   { priority: 2 });
 
-// output:
-// lowest priority runs first
+// Output:
+// Lowest priority runs first, as long as they are
+// all waiting in the queue at the same time (e.g.
+// none have gotten a chance to start running yet)
 //
 //     two
 //     three
 //     seven
+```
+
+## Bypass
+
+You can bypass the lock and just run you function directly using the `bypass` option:
+
+```ts
+await lock.run(() => console.log('hello'), { bypass: true });
+```
+
+This is useful if you sometimes want to run your code without waiting for the lock.  Maybe, for example, you're in a nested function and you know the lock has already been obtained, and you don't want to get it again to avoid deadlock.
+
+## Deadlock
+
+Don't try to use the lock from inside itself, or you'll get stuck waiting forever:
+
+```ts
+let lock = new Lock();
+
+lock.run(() => {
+    // DO NOT DO THIS.
+    // This will get stuck waiting forever.
+    lock.run(() => { console.log('nested') });
+});
+```
+
+This might sneak up on you if it happens across several functions.  Be careful.
+
+```ts
+let lock = new Lock();
+
+// DO NOT DO THIS
+
+let doSomething = () => {
+    // deadlock happens here...
+    lock.run(() => { console.log('doing something') });
+}
+
+let doSomethingBigger = () => {
+    lock.run(() => {
+        console.log('Gonna do a thing.');
+        doSomething(); // because it's called from inside the lock already
+        console.log('I did a thing!');
+    });
+}
+```
+
+## Using several locks safely
+
+If you have several locks, you can avoid deadlock by always getting the locks in the same order:
+
+```ts
+let lockAmy = new Lock();
+let lockSam = new Lock();
+
+let balances: Record<string, number> = {
+    amy: 100,
+    sam: 100,
+}
+
+let transferMoney = async (amount) => {
+    // Always get the locks in the same order here.
+    // In this case, alphabetical order.
+    // If we were ever to do it in a different order elsewhere,
+    // we could get a deadlock.
+    await lockAmy.run(async () => {
+        await lockSam.run(async () => {
+            balances.amy -= amount;
+            balances.sam += amount;
+        });
+    });
+}
 ```
 
 # Develop
