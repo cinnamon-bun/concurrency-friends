@@ -1,7 +1,10 @@
+// a Deferred is a Promise with its parts broken apart
+// for easy access from the outside.
+
+// normal types for Promise resolve and reject functions
 export type ResolveFn<T> = (value: T | PromiseLike<T>) => void;
 export type RejectFn = (reason?: any) => void;
 
-// a Deferred is a Promise with its parts broken apart for easy access.
 export interface Deferred<T> {
     promise: Promise<T>;
     resolve: ResolveFn<T>;
