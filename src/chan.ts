@@ -18,7 +18,34 @@ At the moment a channel closes:
 When get or put calls are waiting, they are queued and processed in the order they were called.
 */
 
-import { Deferred, makeDeferred, } from './deferred';
+import LinkedList, { Node as LinkedListNode } from 'dbly-linked-list';
+
+import { Deferred, makeDeferred } from './deferred';
+
+export let removeLinkedListNode = (list: LinkedList, node: LinkedListNode) => {
+    if (node.next && node.prev) {
+        node.next.prev = node.prev;
+        node.prev.next = node.next;
+        list.size -= 1;
+    } else if (node.next) {
+        // this is the first node
+        let newFirst = node.next;
+        newFirst.prev = null;
+        list.head = newFirst;
+        list.size -= 1;
+    } else if (node.prev) {
+        let newLast = node.prev;
+        newLast.next = null;
+        list.tail = newLast;
+        list.size -= 1;
+    } else {
+        // this is the only node
+        list.clear();
+    }
+    node.next = null;
+    node.prev = null;
+}
+
 
 let J = (x: any) => JSON.stringify(x);
 let log = (msg?: any, val?: any) => { };
@@ -46,13 +73,17 @@ export class ChannelIsSealedError extends Error {
     }
 }
 
+interface WaitingPut<T> {
+    item: T,
+    deferred: Deferred<void>;
+};
 export class Chan<T> {
-    _queue: T[] = [];
+    _queue: LinkedList; // of T
     _capacity: number | null;
     _isClosed: boolean = false;
     _isSealed: boolean = false;
-    _waitingGets: Deferred<T>[] = [];
-    _waitingPuts: { item: T, deferred: Deferred<void> }[] = [];
+    _waitingGets: LinkedList;  // of Deferred<T>
+    _waitingPuts: LinkedList;  // of WaitingPut<T>
 
     // TODO: add events for:
     //   closed (manually, or because sealed-and-drained)
@@ -67,6 +98,9 @@ export class Chan<T> {
         // maxLen = 1: you can put once before getting.
         // maxLen = null: unlimited buffer size.
         this._capacity = capacity;
+        this._queue = new LinkedList();
+        this._waitingGets = new LinkedList();
+        this._waitingPuts = new LinkedList();
     }
 
     close(): void {
@@ -78,21 +112,22 @@ export class Chan<T> {
         this._isClosed = true;
 
         // throw away queue
-        this._queue = [];
+        this._queue = new LinkedList();
 
         // reject waiting gets
         log(`...reject waiting gets`);
-        for (let waitingGet of this._waitingGets) {
+        this._waitingGets.forEach((node: LinkedListNode) => {
+            let waitingGet = node.getData() as Deferred<T>;
             waitingGet.reject(new ChannelIsClosedError('waiting get is cancelled because channel was closed'));
-        }
-        this._waitingGets = [];
+        });
+        this._waitingGets = new LinkedList();
 
         // reject waiting puts
-        log(`...reject waiting puts`);
-        for (let waitingPut of this._waitingPuts) {
-            waitingPut.deferred.reject(new ChannelIsClosedError('waiting put is cancelled because channel was closed'));
-        }
-        this._waitingPuts = [];
+        this._waitingPuts.forEach((node: LinkedListNode) => {
+            let waitingPut = node.getData() as WaitingPut<T>;
+            waitingPut.deferred.reject(new ChannelIsClosedError('waiting get is cancelled because channel was closed'));
+        });
+        this._waitingPuts = new LinkedList();
 
         log(`...close is done.`);
     }
@@ -122,19 +157,21 @@ export class Chan<T> {
 
         // reject waiting gets
         log(`...reject waiting gets`);
-        for (let waitingGet of this._waitingGets) {
+        this._waitingGets.forEach((node: LinkedListNode) => {
+            let waitingGet = node.getData() as Deferred<T>;
             waitingGet.reject(new ChannelIsSealedError('waiting get is cancelled because channel was sealed'));
-        }
-        this._waitingGets = [];
+        });
+        this._waitingGets = new LinkedList();
 
         // reject waiting puts
         log(`...reject waiting puts`);
-        for (let waitingPut of this._waitingPuts) {
+        this._waitingPuts.forEach((node: LinkedListNode) => {
+            let waitingPut = node.getData() as WaitingPut<T>;
             waitingPut.deferred.reject(new ChannelIsSealedError('waiting put is cancelled because channel was sealed'));
-        }
-        this._waitingPuts = [];
+        });
+        this._waitingPuts = new LinkedList();
 
-        if (this._queue.length === 0) {
+        if (this._queue.isEmpty()) {
             log(`...nothing is in the queue; closing the channel right now`);
             this.close();
         }
@@ -149,16 +186,16 @@ export class Chan<T> {
         return this._capacity;
     }
     get itemsInQueue(): number {
-        return this._queue.length;
+        return this._queue.getSize();
     }
     get itemsInQueueAndWaitingPuts(): number {
-        return this._queue.length + this._waitingPuts.length;
+        return this._queue.getSize() + this._waitingPuts.getSize();
     }
     get numWaitingGets(): number {
-        return this._waitingGets.length;
+        return this._waitingGets.getSize();
     }
     get isIdle(): boolean {
-        return this._queue.length + this._waitingGets.length + this._waitingPuts.length === 0;
+        return this._queue.getSize() + this._waitingGets.getSize() + this._waitingPuts.getSize() === 0;
     }
 
     get canImmediatelyPut(): boolean {
@@ -167,12 +204,12 @@ export class Chan<T> {
             return false;
         }
         // A. queue is empty and there's a waiting get: give it to the get
-        if (this._queue.length === 0 && this._waitingGets.length > 0) {
+        if (this._queue.isEmpty() && !this._waitingGets.isEmpty()) {
             log('canImmediatelyPut: A. yes, queue is empty and there is a waiting get');
             return true;
         }
         // B. queue has space: put it in the queue
-        let queueHasSpace = this._capacity === null || (this._queue.length < this._capacity);
+        let queueHasSpace = this._capacity === null || (this._queue.getSize() < this._capacity);
         if (queueHasSpace) {
             log('canImmediatelyPut: B. yes, queue has space');
             return true;
@@ -185,9 +222,9 @@ export class Chan<T> {
     get canImmediatelyGet(): boolean {
         if (this._isClosed) { return false; }
         // A. queue has items: grab from queue
-        if (this._queue.length > 0) { return true; }
+        if (!this._queue.isEmpty()) { return true; }
         // B. there are waiting puts: grab one
-        if (this._waitingPuts.length > 0) { return true; }
+        if (!this._waitingPuts.isEmpty()) { return true; }
         // C. nothing to get
         return false;
     }
@@ -201,12 +238,13 @@ export class Chan<T> {
         if (this._isSealed) { throw new ChannelIsSealedError('cannot put() to a sealed channel'); }
         if (this._isClosed) { throw new ChannelIsClosedError('cannot put() to a closed channel'); }
 
-        let queueHasSpace = this._capacity === null || (this._queue.length < this._capacity);
+        let queueHasSpace = this._capacity === null || (this._queue.getSize() < this._capacity);
 
         // A. queue is empty and there's a waiting get: give it to the get
-        if (this._queue.length === 0 && this._waitingGets.length > 0) {
+        if (this._queue.isEmpty() && !this._waitingGets.isEmpty()) {
             log(`...put: A. give it to a waiting get`);
-            let getDeferred = this._waitingGets.shift() as Deferred<T>;
+            let getDeferred = this._waitingGets.getHeadNode()?.getData() as Deferred<T>;
+            this._waitingGets.removeFirst();
             getDeferred.resolve(item);
             log(`...put is done.`);
             return;
@@ -215,7 +253,7 @@ export class Chan<T> {
         // B. queue has space: put it in the queue
         if (queueHasSpace) {
             log(`...put: B. put it in the queue`);
-            this._queue.push(item);
+            this._queue.insert(item as any);
             log(`...put is done.`);
             return;
         }
@@ -236,7 +274,8 @@ export class Chan<T> {
         log(`...put: C3. no space, make a waitingPut that will block`);
         let putDeferred = makeDeferred<void>();
         let waitingPut = { item, deferred: putDeferred };
-        this._waitingPuts.push(waitingPut);
+        this._waitingPuts.insert(waitingPut);
+        let waitingPutNode = this._waitingPuts.getTailNode() as LinkedListNode;
 
         // if timeout is desired, start a timer
         if (timeout !== null && timeout > 0) {
@@ -246,7 +285,7 @@ export class Chan<T> {
                 // This is harmless if it happens to occur after the
                 //  waitingPut succeeds.
                 log(`...put: C3t. timeout timer has fired after ${timeout} ms`);
-                this._waitingPuts = this._waitingPuts.filter(d => d !== waitingPut);
+                removeLinkedListNode(this._waitingPuts, waitingPutNode);
                 putDeferred.reject(new ChannelTimeoutError('timeout occurred'));
             }, timeout);
             // If the waitingPut is resolved later, cancel the timer.
@@ -281,22 +320,25 @@ export class Chan<T> {
         }
 
         // A. queue has items: grab from queue
-        if (this._queue.length > 0) {
+        if (!this._queue.isEmpty()) {
             log(`...get: A. get item from queue.`);
-            let item = this._queue.shift() as T;
+            let item = this._queue.getHeadNode()?.getData() as T;
+            this._queue.removeFirst();
 
             // if sealed and just became empty, close it
-            if (this._isSealed && this._queue.length === 0) {
+            if (this._isSealed && this._queue.isEmpty()) {
                 log(`...get: A1. channel is sealed and we just got the last item; closing it`);
                 this.close();
             }
 
             // if there are waiting puts, get the next one and put it into the queue
             // to keep the queue full
-            if (this._waitingPuts.length > 0 && this._capacity !== null && this._queue.length < this._capacity) {
+            if (!this._waitingPuts.isEmpty() && this._capacity !== null && this._queue.getSize() < this._capacity) {
                 log(`...get: A2. now there is space in the queue; getting a waiting put to fill the space`);
-                let { item, deferred } = this._waitingPuts.shift() as { item: T, deferred: Deferred<void> };
-                this._queue.push(item);
+                let waitingPut = this._waitingPuts.getHeadNode()?.getData() as WaitingPut<T>;
+                this._waitingPuts.removeFirst();
+                let { item, deferred } = waitingPut;
+                this._queue.insert(item as any);
                 // resolve the waitingPut promise
                 deferred.resolve(undefined);
             }
@@ -307,9 +349,11 @@ export class Chan<T> {
 
         // B. queue is empty but there are waiting puts: grab one directly
         // (this happens when queue capacity is zero)
-        if (this._waitingPuts.length > 0) {
+        if (!this._waitingPuts.isEmpty()) {
             log(`...get: B. get item from a waiting put and resolve the waiting put`);
-            let { item, deferred } = this._waitingPuts.shift() as { item: T, deferred: Deferred<void> };
+            let waitingPut = this._waitingPuts.getHeadNode()?.getData() as WaitingPut<T>;
+            this._waitingPuts.removeFirst();
+            let { item, deferred } = waitingPut;
             // resolve the waiting promise
             deferred.resolve(undefined);
             log(`...get is done.`);
@@ -330,7 +374,8 @@ export class Chan<T> {
         // C3. make a waiting get
         log(`...get: C3. nothing to get; making a waiting get to block on`);
         let getDeferred = makeDeferred<T>();
-        this._waitingGets.push(getDeferred);
+        this._waitingGets.insert(getDeferred);
+        let waitingGetNode = this._waitingGets.getTailNode() as LinkedListNode;
 
         // if timeout is desired, start a timer
         if (timeout !== null && timeout > 0) {
@@ -340,7 +385,7 @@ export class Chan<T> {
                 // This is harmless if it happens to occur after the
                 //  waitingGet succeeds.
                 log(`...get: C3t. timeout timer has fired after ${timeout} ms`);
-                this._waitingGets = this._waitingGets.filter(d => d !== getDeferred);
+                removeLinkedListNode(this._waitingGets, waitingGetNode);
                 getDeferred.reject(new ChannelTimeoutError('timeout occurred'));
             }, timeout);
             // If the waitingGet is resolved later, cancel the timer.

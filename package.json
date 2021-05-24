@@ -22,6 +22,7 @@
     "test-chan": "jest src/test/chan.test.ts --verbose",
     "test-conveyor": "jest src/test/conveyor.test.ts --verbose",
     "test-lock": "jest src/test/lock.test.ts --verbose",
+    "test-ll": "jest src/test/linkedlist.test.ts --verbose",
     "depchart-basic": "mkdir   -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts `find src | grep '/example/'` `find src | grep '/test/'` `find src | grep '/benchmark'` --rankdir LR -o depchart/depchart-basic --node_modules separated",
     "depchart-all": "mkdir     -p depchart && depchart `find src | grep .ts` --exclude src/index.ts src/decl/typings.d.ts                                                                                         --rankdir LR -o depchart/depchart-all   --node_modules separated",
     "depchart": "yarn depchart-all && yarn depchart-basic",
@@ -37,6 +38,7 @@
   },
   "dependencies": {
     "@types/heap": "^0.2.28",
+    "dbly-linked-list": "^0.3.4",
     "heap": "^0.2.6"
   },
   "jest": {
