@@ -40,6 +40,8 @@ Status: tested, working, but not production ready.
   - [Bypass](#bypass)
   - [Deadlock](#deadlock)
   - [Using several locks safely](#using-several-locks-safely)
+- [Other stuff](#other-stuff)
+  - [Deferred](#deferred)
 - [Develop](#develop)
   - [File dependency chart](#file-dependency-chart)
   - [Updating the README table of contents](#updating-the-readme-table-of-contents)
@@ -855,6 +857,28 @@ let transferMoney = async (amount) => {
     });
 }
 ```
+
+# Other stuff
+
+## Deferred
+
+This module exports helper code for `Deferred<T>` objects.
+
+A `Deferred` is a Promise with its resolve and reject functions exposed for use from the outside.
+
+```ts
+export interface Deferred<T> {
+    promise: Promise<T>;
+    resolve: ResolveFn<T>;
+    reject: RejectFn;
+}
+
+export let makeDeferred = <T>(): Deferred<T> => {
+    //  ... returns a new Deferred
+}
+```
+
+This is useful if you're doing tricky stuff with promises, as we do in many places in this package.  For example: making a queue of Deferreds, returning their Promise, then later resolving or rejecting them when some event happens.
 
 # Develop
 
