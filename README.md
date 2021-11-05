@@ -24,6 +24,7 @@ Status: tested, working, but not production ready.
     - [Close, isClosed](#close-isclosed)
     - [Seal, isSealed](#seal-issealed)
     - [ForEach](#foreach)
+    - [Events: `onClose` and `onSeal`](#events-onclose-and-onseal)
     - [Misc other information](#misc-other-information)
   - [Chan in depth](#chan-in-depth)
     - [Comparison with streams](#comparison-with-streams)
@@ -215,7 +216,9 @@ A closed Chan cannot be opened again.
 
 `chan.seal()`
 
-Seal a Chan.  This caps the input side of the queue so that no new items can be `put`, but existing items can still be obtained with `get`.  Once the queue becomes empty, it will be `close()`d for you.
+Seal a Chan.  This caps the input side of the queue so that no new items can be `put`, but existing items can still be obtained with `get`.
+
+Once the queue becomes empty, it will be `close()`d for you.  If you seal a chan that's already empty, it will be closed right away.  Otherwise it will close after the last item has been pulled out.
 
 Use this when you're done adding items to a Chan and want to signal that the data is complete, and you want to gently give consumers a chance to finish getting all the items out.
 
@@ -305,6 +308,36 @@ setTimeout(() => {
     loopControl.keepRunning = false;
 }, 1000);
 ```
+
+---
+
+### Events: `onClose` and `onSeal`
+
+A chan emits events when it's sealed and when it's closed.
+
+To subscribe to an event:
+
+```ts
+chan.onClose.subscribe( /* handler function */ );
+chan.onSeal.subscribe( /* handler function */ );
+```
+
+The handler functions take no inputs, and are run as synchronous functions (without awaiting them).
+
+For example:
+
+```ts
+let unsub = chan.onClose.subscribe(() => {
+    // ... your handler here ...
+});
+unsub();  // unsubscribe
+```
+
+`subscribe(...)` returns another function which will remove the subscription.
+
+The `onClose` event is sent after the closing process is complete; by that point the chan has `chan.isClosed === true`.
+
+The `onSeal` event is sent after the sealing process is complete.
 
 ---
 

@@ -73,6 +73,23 @@ export class ChannelIsSealedError extends Error {
     }
 }
 
+type Thunk = () => void;
+type BusCb<T> = (msg: T) => any;
+class Bus<T> {
+    cbs: Set<BusCb<T>> = new Set();
+    constructor() {
+    }
+    subscribe(cb: BusCb<T>): Thunk {
+        this.cbs.add(cb);
+        return () => this.cbs.delete(cb);
+    }
+    send(msg: T): void {
+        for (let cb of this.cbs) {
+            cb(msg);
+        }
+    }
+}
+
 interface WaitingPut<T> {
     item: T,
     deferred: Deferred<void>;
@@ -84,6 +101,9 @@ export class Chan<T> {
     _isSealed: boolean = false;
     _waitingGets: LinkedList;  // of Deferred<T>
     _waitingPuts: LinkedList;  // of WaitingPut<T>
+
+    onClose: Bus<void> = new Bus();
+    onSeal: Bus<void> = new Bus();
 
     // TODO: add events for:
     //   closed (manually, or because sealed-and-drained)
@@ -129,6 +149,13 @@ export class Chan<T> {
         });
         this._waitingPuts = new LinkedList();
 
+        log(`...sending onClose`);
+        this.onClose.send();  // we should await here, but we can't because we're in a sync function
+
+        // remove all event subscriptions
+        this.onClose.cbs.clear();
+        this.onSeal.cbs.clear();
+
         log(`...close is done.`);
     }
     get isClosed(): boolean {
@@ -170,6 +197,9 @@ export class Chan<T> {
             waitingPut.deferred.reject(new ChannelIsSealedError('waiting put is cancelled because channel was sealed'));
         });
         this._waitingPuts = new LinkedList();
+
+        log('...sending onSeal');
+        this.onSeal.send();  // we should await here, but we can't because we're in a sync function
 
         if (this._queue.isEmpty()) {
             log(`...nothing is in the queue; closing the channel right now`);

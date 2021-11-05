@@ -7,6 +7,88 @@ import { sleep } from '../util';
 //    console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
 //});
 
+describe('bus events', () => {
+    test('onClose normal usage', async () => {
+        let chan = new Chan<number>();
+        let logs = [];
+        logs.push('a');
+        let unsub = chan.onClose.subscribe(() => logs.push('closed'));
+        logs.push('b');
+        await chan.put(1);
+        logs.push('c');
+        chan.close();
+        chan.close();
+        logs.push('d');
+
+        expect(logs).toStrictEqual(['a', 'b', 'c', 'closed', 'd']);
+    });
+
+    test('onClose unsubscribe', async () => {
+        let chan = new Chan<number>();
+        let logs = [];
+        logs.push('a');
+        let unsub = chan.onClose.subscribe(() => logs.push('closed'));
+        logs.push('b');
+        await chan.put(1);
+        logs.push('c');
+        unsub();
+        unsub();
+        chan.close();
+        logs.push('d');
+
+        expect(logs).toStrictEqual(['a', 'b', 'c', 'd']);
+    });
+
+    test('onSeal and onClose', async () => {
+        let chan = new Chan<number>();
+        let logs = [];
+        logs.push('a');
+        let unsubSeal = chan.onSeal.subscribe(() => logs.push('sealed'));
+        let unsubClose = chan.onClose.subscribe(() => logs.push('closed'));
+        logs.push('b');
+        await chan.put(1);
+        logs.push('c');
+        chan.seal();
+        await chan.get();  // drain the chan so it gets sealed and auto-closed
+        logs.push('d');
+        expect(chan.isClosed).toBe(true);
+
+        expect(logs).toStrictEqual(['a', 'b', 'c', 'sealed', 'closed', 'd']);
+    });
+
+    test('onSeal and onClose with empty chan', async () => {
+        let chan = new Chan<number>();
+        let logs = [];
+        logs.push('a');
+        let unsubSeal = chan.onSeal.subscribe(() => logs.push('sealed'));
+        let unsubClose = chan.onClose.subscribe(() => logs.push('closed'));
+        logs.push('b');
+        chan.seal();  // this will also close it right away
+        logs.push('c');
+        expect(chan.isClosed).toBe(true);
+
+        // sealed event must come before closed
+        expect(logs).toStrictEqual(['a', 'b', 'sealed', 'closed', 'c']);
+    });
+
+    test('onSeal unsub', async () => {
+        let chan = new Chan<number>();
+        let logs = [];
+        logs.push('a');
+        let unsubSeal = chan.onSeal.subscribe(() => logs.push('sealed'));
+        let unsubClose = chan.onClose.subscribe(() => logs.push('closed'));
+        logs.push('b');
+        await chan.put(1);
+        logs.push('c');
+        unsubSeal();
+        chan.seal();
+        chan.close();
+        logs.push('d');
+
+        expect(logs).toStrictEqual(['a', 'b', 'c', 'closed', 'd']);
+    });
+});
+
 test('basic getter methods (isClosed, etc)', async () => {
     let chanInf = new Chan<number>();
     expect(chanInf.isClosed).toBe(false);
