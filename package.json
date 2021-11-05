@@ -30,15 +30,15 @@
     "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.15",
-    "doctoc": "^2.0.0",
+    "@types/jest": "^27.0.2",
+    "doctoc": "^2.1.0",
     "jest": "^26.6.3",
     "ts-jest": "^26.4.4",
-    "typescript": "^4.1.0"
+    "typescript": "^4.4.4"
   },
   "dependencies": {
     "@types/heap": "^0.2.28",
-    "dbly-linked-list": "^0.3.4",
+    "dbly-linked-list": "^0.3.5",
     "heap": "^0.2.6"
   },
   "jest": {

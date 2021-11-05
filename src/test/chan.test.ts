@@ -1018,7 +1018,7 @@ describe(`forEach`, () => {
             });
             expect('should have thrown an error').toBe(true);
         } catch (err) {
-            expect(err.message).toBe('two is a bad number');
+            expect((err as Error).message).toBe('two is a bad number');
         }
 
         expect(receivedItems).toEqual([1]);  // stop at the error
