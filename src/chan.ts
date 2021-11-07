@@ -201,10 +201,10 @@ export class Chan<T> {
         log('...sending onSeal');
         this.onSeal.send();  // we should await here, but we can't because we're in a sync function
 
-        if (this._queue.isEmpty()) {
-            log(`...nothing is in the queue; closing the channel right now`);
-            this.close();
-        }
+        //if (this._queue.isEmpty()) {
+        //    log(`...nothing is in the queue; closing the channel right now`);
+        //    this.close();
+        //}
 
         log(`...seal is done.`);
     }
@@ -463,13 +463,36 @@ export class Chan<T> {
         }
     }
 
-    /*
     map(cb: (item: T) => T | Promise<T>, opts?: { timeout: number | null }): Chan<T> {
+        // make a new output chan;
+        // copy items from the input chan to the output chan
+        // while applying the map function.
+        // the map function can be sync or async.
+        // If the input chan is sealed, the output chan will consume all the
+        // remaining items, and then seal and close itself.
+        // If the input chan is closed, the output chan will close itself
+        // at the same time (potentially wiping out its items).
         let outChan = new Chan<T>();
-        outChan.forEach(async (item: T) => {
-            let item2 = await cb(item);
-            await outChan.put(item2, opts);
+        process.nextTick(async () => {
+            while (true) {
+                try {
+                    let item = await this.get(opts);
+                    let item2 = await cb(item);
+                    await outChan.put(item2, opts);
+                } catch (err) {
+                    if (err instanceof ChannelIsSealedError) {
+                        outChan.seal(); outChan.close(); return;
+                    } else if (err instanceof ChannelIsClosedError) {
+                        outChan.close(); return;
+                    } else if (err instanceof ChannelTimeoutError) {
+                        throw err;
+                    } else {
+                        throw err;
+                    }
+                }
+            }
         });
+        this.onClose.subscribe(() => outChan.close());
         return outChan;
     }
 
@@ -481,9 +504,9 @@ export class Chan<T> {
                 await outChan.put(item, opts);
             }
         });
+        outChan.seal();
         return outChan;
     }
-    */
 
     async toArray(opts?: { timeout: number | null }): Promise<T[]> {
         // get items and put them into an array.

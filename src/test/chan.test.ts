@@ -67,24 +67,88 @@ describe('toArray, fromArray', () => {
 
 });
 
-/*
 describe('map, filter', () => {
-    test('map', async () => {
+    test.only('map', async () => {
         let chan = new Chan<number>();
         let chan2 = chan.map(x => x*2);
+
         await chan.put(1);
         await chan.put(2);
         await chan.put(3);
         chan.seal();
+
+        expect(chan.itemsInQueue).toBe(3);
+        expect(chan.isSealed).toBe(true);
+        expect(chan.isClosed).toBe(false);
+        expect(chan2.isSealed).toBe(false);
+        expect(chan2.isClosed).toBe(false);
+
         expect(await chan2.get()).toBe(2);
         expect(await chan2.get()).toBe(4);
         expect(await chan2.get()).toBe(6);
 
+        expect(chan.itemsInQueue).toBe(0);
+        expect(chan.isSealed).toBe(true);
+        expect(chan.isClosed).toBe(false);
+        expect(chan2.isSealed).toBe(false);
+        expect(chan2.isClosed).toBe(false);
+
+        // does not seal/close until you try to go off the end
+
+        // going off the end results in it being sealed and closed
+        try {
+            await chan2.get();
+            expect(false).toBe('should not get here; it should be sealed');
+        } catch (err) {
+            expect(err instanceof ChannelIsSealedError).toBe(true);
+        }
+        expect(chan.itemsInQueue).toBe(0);
+        expect(chan.isSealed).toBe(true);
+        expect(chan.isClosed).toBe(true);
+        expect(chan2.isSealed).toBe(true);
+        expect(chan2.isClosed).toBe(false);
+
         chan.close();
-        chan2.close();
+    });
+    test('map with async function', async () => {
+        let chan = new Chan<number>();
+        let chan2 = chan.map(async x => {
+            await sleep(10);
+            return x * 2;
+        });
+
+        for (let item of [1, 2, 3]) {
+            await chan.put(item);
+        }
+        chan.seal();
+
+        expect(await chan2.get()).toBe(2);
+        expect(await chan2.get()).toBe(4);
+        expect(await chan2.get()).toBe(6);
+        try {
+            await chan2.get();
+            expect(false).toBe('should not get here; it should be sealed');
+        } catch (err) {
+            expect(err instanceof ChannelIsSealedError).toBe(true);
+        }
+        expect(chan2.isSealed).toBe(true);
+        expect(chan2.isClosed).toBe(true);
+
+        chan.close();
+    });
+    test('map: closing in-chan also closes out-chan', async () => {
+        let chan = new Chan<number>();
+        let chan2 = chan.map(async x => {
+            await sleep(10);
+            return x * 2;
+        });
+
+        chan.close();
+
+        expect(chan2.isSealed).toBe(false);
+        expect(chan2.isClosed).toBe(true);
     });
 });
-*/
 
 describe('bus events', () => {
     test('onClose normal usage', async () => {
