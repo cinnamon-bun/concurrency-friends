@@ -7,6 +7,85 @@ import { sleep } from '../util';
 //    console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
 //});
 
+describe('toArray, fromArray', () => {
+    test('toArray with seal()', async () => {
+        let chan = new Chan<number>();
+        await chan.put(1);
+        await chan.put(2);
+        await chan.put(3);
+        chan.seal();
+        let arr = await chan.toArray();
+        expect(arr).toStrictEqual([1, 2, 3]);
+
+        chan.close();
+    });
+
+    test('toArray with close()', async () => {
+        let chan = new Chan<number>();
+
+        setTimeout(async () => {
+            await sleep(50);
+            await chan.put(1);
+            await sleep(50);
+            await chan.put(2);
+            await sleep(50);
+            await chan.put(3);
+            chan.close();
+        }, 1);
+
+        setTimeout(async () => {
+            await sleep(100);
+            let arr = await chan.toArray({ timeout: 300 });
+            expect(arr).toStrictEqual([1, 2, 3]);
+        }, 1);
+    });
+
+    test('toArray with timeout', async () => {
+        let chan = new Chan<number>();
+
+        setTimeout(async () => {
+            await sleep(100);
+            await chan.put(1);
+            await sleep(100);
+            await chan.put(2);
+            await sleep(100);
+            await chan.put(3);
+            await sleep(500);
+            await chan.put(4);  // won't get this one because sleep is longer than toArray's timeout
+            chan.close();
+        }, 1);
+
+        let arr: any[] = [];
+        setTimeout(async () => {
+            await sleep(150);
+            arr = await chan.toArray({ timeout: 300 });
+        }, 1);
+
+        await sleep(1000);
+        expect(arr).toStrictEqual([1, 2, 3]);
+    });
+
+});
+
+/*
+describe('map, filter', () => {
+    test('map', async () => {
+        let chan = new Chan<number>();
+        let chan2 = chan.map(x => x*2);
+        await chan.put(1);
+        await chan.put(2);
+        await chan.put(3);
+        chan.seal();
+        expect(await chan2.get()).toBe(2);
+        expect(await chan2.get()).toBe(4);
+        expect(await chan2.get()).toBe(6);
+
+        chan.close();
+        chan2.close();
+    });
+});
+*/
+
 describe('bus events', () => {
     test('onClose normal usage', async () => {
         let chan = new Chan<number>();

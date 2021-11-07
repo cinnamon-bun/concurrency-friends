@@ -463,4 +463,44 @@ export class Chan<T> {
         }
     }
 
+    /*
+    map(cb: (item: T) => T | Promise<T>, opts?: { timeout: number | null }): Chan<T> {
+        let outChan = new Chan<T>();
+        outChan.forEach(async (item: T) => {
+            let item2 = await cb(item);
+            await outChan.put(item2, opts);
+        });
+        return outChan;
+    }
+
+    filter(cb: (item: T) => boolean | Promise<boolean>, opts?: { timeout: number | null }): Chan<T> {
+        let outChan = new Chan<T>();
+        outChan.forEach(async (item: T) => {
+            let keep = await cb(item);
+            if (keep) {
+                await outChan.put(item, opts);
+            }
+        });
+        return outChan;
+    }
+    */
+
+    async toArray(opts?: { timeout: number | null }): Promise<T[]> {
+        // get items and put them into an array.
+        // stop when the chan is closed or sealed, or when timeout has passed since last item.
+        let arr: T[] = [];
+        try {
+            await this.forEach((item) => arr.push(item), opts);
+        } catch (err) {
+            if (err instanceof ChannelTimeoutError
+                || err instanceof ChannelIsClosedError
+                || err instanceof ChannelIsSealedError) {
+                return arr;
+            } else {
+                throw err;
+            }
+        }
+        return arr;
+    }
+
 }

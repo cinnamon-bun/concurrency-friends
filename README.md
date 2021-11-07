@@ -24,6 +24,7 @@ Status: tested, working, but not production ready.
     - [Close, isClosed](#close-isclosed)
     - [Seal, isSealed](#seal-issealed)
     - [ForEach](#foreach)
+    - [toArray](#toarray)
     - [Events: `onClose` and `onSeal`](#events-onclose-and-onseal)
     - [Misc other information](#misc-other-information)
   - [Chan in depth](#chan-in-depth)
@@ -307,6 +308,42 @@ chan.forEach(item => {
 setTimeout(() => {
     loopControl.keepRunning = false;
 }, 1000);
+```
+
+---
+
+### toArray
+
+```ts
+async toArray(opts?: { timeout: number | null }): Promise<T[]>;
+```
+Read from a chan and collect the items into an array.
+
+Sop when the chan is closed or sealed, or when *timeout* milliseconds have passed since the last item.
+
+Example:
+
+```ts
+// USING TIMEOUT
+let chan = new Chan<number>();
+await chan.put(1);
+await chan.put(2);
+await chan.put(3);
+
+// stop waiting for new items 100 ms after the previous item
+await chan.toArray({ timeout: 100 });  // => [1, 2, 3];
+```
+
+```ts
+// USING SEAL
+let chan = new Chan<number>();
+await chan.put(1);
+await chan.put(2);
+await chan.put(3);
+chan.seal(); // mark the channel as complete; no more items after this
+
+// timeout no longer needed because it knows when it reaches the end
+await chan.toArray();  // => [1, 2, 3];
 ```
 
 ---
