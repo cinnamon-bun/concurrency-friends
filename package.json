@@ -1,6 +1,6 @@
 {
   "name": "concurrency-friends",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "description": "Go-style channels and some other concurrency tools.",
   "author": "Cinnamon <cinnamon_npm@fastmail.com>",
   "homepage": "https://github.com/cinnamon-bun/concurrency-friends",
